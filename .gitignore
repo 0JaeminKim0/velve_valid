@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+dist/
+*.log
+.env
+.dev.vars
+.pm2/
+*.tar.gz
+core

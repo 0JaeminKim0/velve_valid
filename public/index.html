@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>밸브재 가격 분석 AI Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    
+    .typing-dot { animation: typing 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-4px); }
+    }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.5s ease-out; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-soft {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+    }
+    .pulse-active { animation: pulse-soft 2s ease-in-out infinite; }
+    
+    /* Step Navigator - Premium Design */
+    .step-nav-container {
+      background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    }
+    
+    .step-group { 
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      transition: all 0.3s ease;
+    }
+    .step-group.active { 
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      border-color: #a5b4fc;
+    }
+    .step-group.completed { 
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border-color: #6ee7b7;
+    }
+    
+    .step-item { 
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .step-item.pending { 
+      background: #f1f5f9; 
+      color: #94a3b8;
+      border: 1px solid #e2e8f0;
+    }
+    .step-item.pending:hover {
+      background: #e2e8f0;
+      color: #64748b;
+    }
+    .step-item.active { 
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+      transform: scale(1.08);
+    }
+    .step-item.completed { 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    
+    .connector { 
+      width: 24px;
+      height: 2px; 
+      background: #e2e8f0;
+      transition: all 0.3s ease;
+      border-radius: 1px;
+    }
+    .connector.completed { background: #10b981; }
+    .connector.active { background: linear-gradient(90deg, #10b981 0%, #6366f1 100%); }
+    
+    .group-connector {
+      width: 32px;
+      height: 2px;
+      background: #e2e8f0;
+      border-radius: 1px;
+    }
+    .group-connector.completed { background: #10b981; }
+    .group-connector.active { background: linear-gradient(90deg, #10b981 0%, #6366f1 100%); }
+    
+    .table-container { max-height: 500px; overflow: auto; }
+    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-container::-webkit-scrollbar-track { background: #f8fafc; border-radius: 3px; }
+    .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .badge { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 4px;
+      padding: 3px 10px; 
+      border-radius: 6px; 
+      font-size: 12px; 
+      font-weight: 500;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+    .badge-purple { background: #f3e8ff; color: #7c3aed; }
+    
+    .stat-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: all 0.2s ease;
+    }
+    .stat-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      transform: translateY(-1px);
+    }
+    
+    .ai-message-box {
+      background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 16px;
+    }
+    
+    .ai-report-box {
+      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+      border: 1px solid #d8b4fe;
+      border-radius: 16px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+    .btn-secondary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    table th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="ri-robot-2-fill text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight">밸브재 가격 분석 AI Agent</h1>
+          <p class="text-xs text-slate-400 font-medium">Valve Pricing Verification System</p>
+        </div>
+      </div>
+      <div id="api-status" class="flex items-center gap-2 text-sm"></div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-6">
+    <!-- Step Navigator - Grouped -->
+    <div class="step-nav-container rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+      <div class="flex items-center gap-2" id="step-nav">
+        <!-- Group: 데이터 준비 -->
+        <div class="step-group" id="group-data">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">① 준비</div>
+          <div class="flex items-center">
+            <div class="step-item pending" data-step="0" title="데이터 수집">
+              <i class="ri-database-2-line"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="group-connector"></div>
+        
+        <!-- Group: 추천단가 -->
+        <div class="step-group" id="group-a">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">② 추천단가</div>
+          <div class="flex items-center gap-1">
+            <div class="step-item pending" data-step="a1" title="계약단가 기준">
+              <i class="ri-file-text-line"></i>
+            </div>
+            <div class="connector"></div>
+            <div class="step-item pending" data-step="a2" title="발주실적 기준">
+              <i class="ri-history-line"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="group-connector"></div>
+        
+        <!-- Group: 견적검증 -->
+        <div class="step-group flex-1" id="group-b">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">③ 견적검증</div>
+          <div class="flex items-center gap-1">
+            <div class="step-item pending" data-step="b1" title="계약단가 비교">
+              <i class="ri-file-list-3-line"></i>
+            </div>
+            <div class="connector"></div>
+            <div class="step-item pending" data-step="b2" title="발주실적 비교">
+              <i class="ri-bar-chart-grouped-line"></i>
+            </div>
+            <div class="connector"></div>
+            <div class="step-item pending" data-step="b3" title="적정성 판정">
+              <i class="ri-shield-check-line"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="group-connector"></div>
+        
+        <!-- Group: 시황분석 -->
+        <div class="step-group" id="group-c">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">④ 시황분석</div>
+          <div class="flex items-center">
+            <div class="step-item pending" data-step="c" title="원자재 시황">
+              <i class="ri-line-chart-line"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Progress Bar -->
+      <div class="mt-4 pt-3 border-t border-slate-100">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-500">분석 진행률</span>
+          <span class="text-xs font-bold text-indigo-600" id="progress-text">0%</span>
+        </div>
+        <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Message Area -->
+    <div class="ai-message-box p-6 mb-6" id="agent-message-area">
+      <div class="flex items-start gap-4">
+        <div class="w-11 h-11 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/25">
+          <i class="ri-robot-2-fill text-white text-lg"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-sm font-bold text-indigo-700">AI Agent</span>
+            <span class="badge badge-purple text-[10px]" id="current-step-label">대기중</span>
+          </div>
+          <div id="agent-message" class="text-slate-700 text-[15px] leading-relaxed">
+            안녕하세요! 밸브재 가격 분석을 시작하려면 <strong class="text-indigo-600">"분석 시작"</strong> 버튼을 클릭하세요.
+          </div>
+          <div id="agent-details" class="mt-4 space-y-4">
+            <!-- Details will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Area -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 slide-up" id="results-area" style="display: none;">
+      <!-- Filter Bar -->
+      <div class="flex items-center justify-between gap-4 mb-4 flex-wrap" id="filter-bar">
+        <!-- Filters will be rendered here -->
+      </div>
+      
+      <!-- Data Table -->
+      <div class="table-container border border-slate-200 rounded-xl overflow-hidden" id="data-table-container">
+        <table class="w-full text-sm" id="data-table">
+          <thead class="bg-slate-50">
+            <tr id="table-header"></tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100" id="pagination-area">
+        <div id="pagination-info" class="text-sm text-slate-500"></div>
+        <div id="pagination-controls" class="flex items-center gap-1"></div>
+      </div>
+    </div>
+
+    <!-- AI Report Area -->
+    <div class="ai-report-box p-6 mb-6 slide-up" id="ai-report-area" style="display: none;">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+          <i class="ri-sparkling-2-fill text-white"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 class="font-bold text-violet-900 mb-3 flex items-center gap-2">
+            <span>AI 분석 리포트</span>
+            <span class="badge badge-purple text-[10px]"><i class="ri-robot-line"></i> Claude</span>
+          </h3>
+          <div id="ai-report-text" class="text-slate-700 whitespace-pre-line leading-relaxed text-[15px]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="flex items-center justify-between">
+      <button id="btn-prev" onclick="prevStep()" class="btn-secondary flex items-center gap-2" disabled>
+        <i class="ri-arrow-left-line"></i> 이전
+      </button>
+      <button id="btn-next" onclick="nextStep()" class="btn-primary flex items-center gap-2">
+        분석 시작 <i class="ri-arrow-right-line"></i>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    // State
+    let currentStep = -1;
+    let stepData = {};
+    let currentFilter = {};
+    let currentPage = 1;
+    const pageSize = 30;
+
+    // Step structure - grouped (담당자 이해 가능 언어)
+    const steps = [
+      { id: '0', name: '데이터 수집', group: 'data', icon: 'ri-database-2-line' },
+      { id: 'a1', name: '계약단가 기준', group: 'a', icon: 'ri-file-text-line' },
+      { id: 'a2', name: '발주실적 기준', group: 'a', icon: 'ri-history-line' },
+      { id: 'b1', name: '계약단가 비교', group: 'b', icon: 'ri-file-list-3-line' },
+      { id: 'b2', name: '발주실적 비교', group: 'b', icon: 'ri-bar-chart-grouped-line' },
+      { id: 'b3', name: '적정성 판정', group: 'b', icon: 'ri-shield-check-line' },
+      { id: 'c', name: '원자재 시황', group: 'c', icon: 'ri-line-chart-line' }
+    ];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAPIStatus();
+      
+      document.querySelectorAll('.step-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const stepId = el.dataset.step;
+          const stepIdx = steps.findIndex(s => s.id === stepId);
+          if (stepIdx <= currentStep && stepData[stepId]) {
+            currentStep = stepIdx;
+            updateStepNav();
+            renderStepResult(steps[stepIdx], stepData[stepId]);
+          }
+        });
+      });
+    });
+
+    async function checkAPIStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const statusEl = document.getElementById('api-status');
+        if (data.apiKey?.configured) {
+          statusEl.innerHTML = `
+            <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            <span class="text-emerald-600 text-xs font-semibold">API 연결됨</span>
+          `;
+        } else {
+          statusEl.innerHTML = `
+            <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
+            <span class="text-amber-600 text-xs font-semibold">데모 모드</span>
+          `;
+        }
+      } catch (e) {
+        console.error('Status check failed:', e);
+      }
+    }
+
+    function updateStepNav() {
+      const progress = Math.round(((currentStep + 1) / steps.length) * 100);
+      document.getElementById('progress-text').textContent = `${progress}%`;
+      document.getElementById('progress-bar').style.width = `${progress}%`;
+      
+      steps.forEach((step, idx) => {
+        const el = document.querySelector(`.step-item[data-step="${step.id}"]`);
+        if (!el) return;
+        
+        el.classList.remove('pending', 'active', 'completed', 'pulse-active');
+        if (idx < currentStep) {
+          el.classList.add('completed');
+          el.innerHTML = '<i class="ri-check-line"></i>';
+        } else if (idx === currentStep) {
+          el.classList.add('active', 'pulse-active');
+          el.innerHTML = step.icon ? `<i class="${step.icon}"></i>` : step.label;
+        } else {
+          el.classList.add('pending');
+          el.innerHTML = step.icon ? `<i class="${step.icon}"></i>` : step.label;
+        }
+      });
+      
+      // Update group styles
+      const groups = ['data', 'a', 'b', 'c'];
+      const currentGroup = currentStep >= 0 ? steps[currentStep].group : null;
+      const completedGroups = new Set();
+      steps.forEach((step, idx) => {
+        if (idx < currentStep) completedGroups.add(step.group);
+      });
+      
+      groups.forEach(g => {
+        const groupEl = document.getElementById(`group-${g}`);
+        if (!groupEl) return;
+        groupEl.classList.remove('active', 'completed');
+        if (completedGroups.has(g) && g !== currentGroup) {
+          groupEl.classList.add('completed');
+        } else if (g === currentGroup) {
+          groupEl.classList.add('active');
+        }
+      });
+      
+      // Update group connectors
+      const groupConnectors = document.querySelectorAll('.group-connector');
+      const groupOrder = ['data', 'a', 'b', 'c'];
+      groupConnectors.forEach((c, idx) => {
+        c.classList.remove('completed', 'active');
+        const fromGroup = groupOrder[idx];
+        const toGroup = groupOrder[idx + 1];
+        if (completedGroups.has(fromGroup)) {
+          if (completedGroups.has(toGroup)) {
+            c.classList.add('completed');
+          } else if (toGroup === currentGroup) {
+            c.classList.add('active');
+          }
+        }
+      });
+    }
+
+    function setLoading(isLoading) {
+      const msgEl = document.getElementById('agent-message');
+      if (isLoading) {
+        msgEl.innerHTML = `
+          <span class="text-slate-600">분석 중</span>
+          <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+          <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+          <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+        `;
+      }
+    }
+
+    async function nextStep() {
+      currentStep++;
+      if (currentStep >= steps.length) {
+        currentStep = steps.length - 1;
+        return;
+      }
+
+      updateStepNav();
+      setLoading(true);
+      
+      const step = steps[currentStep];
+      document.getElementById('current-step-label').textContent = `Step ${currentStep + 1}: ${step.name}`;
+      
+      try {
+        await executeStep(step);
+      } catch (e) {
+        console.error('Step execution failed:', e);
+        document.getElementById('agent-message').innerHTML = `<span class="text-red-600">오류 발생: ${e.message}</span>`;
+      }
+
+      document.getElementById('btn-prev').disabled = currentStep === 0;
+      if (currentStep >= steps.length - 1) {
+        document.getElementById('btn-next').innerHTML = '완료 <i class="ri-check-line"></i>';
+        document.getElementById('btn-next').disabled = true;
+      } else {
+        document.getElementById('btn-next').innerHTML = '다음 <i class="ri-arrow-right-line"></i>';
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        updateStepNav();
+        const step = steps[currentStep];
+        document.getElementById('current-step-label').textContent = `Step ${currentStep + 1}: ${step.name}`;
+        if (stepData[step.id]) {
+          renderStepResult(step, stepData[step.id]);
+        }
+        document.getElementById('btn-prev').disabled = currentStep === 0;
+        document.getElementById('btn-next').disabled = false;
+        document.getElementById('btn-next').innerHTML = '다음 <i class="ri-arrow-right-line"></i>';
+      }
+    }
+
+    async function executeStep(step) {
+      const stepId = step.id;
+      const res = await fetch(`/api/step/${stepId}`);
+      const data = await res.json();
+      stepData[stepId] = data;
+      renderStepResult(step, data);
+    }
+
+    function renderStepResult(step, data) {
+      const msgEl = document.getElementById('agent-message');
+      const detailsEl = document.getElementById('agent-details');
+      const resultsArea = document.getElementById('results-area');
+      const aiReportArea = document.getElementById('ai-report-area');
+
+      msgEl.innerHTML = `<span class="fade-in">${data.message || data.title || step.name}</span>`;
+      aiReportArea.style.display = 'none';
+
+      if (step.id === '0') {
+        renderStep0Details(data, detailsEl);
+        renderStep0Table(data);
+      } else if (step.id === 'b3') {
+        renderB3Details(data, detailsEl);
+        renderDataTable(data.data, getFiltersForStep(step.id));
+        // AI 코멘트가 포함된 데이터 표시
+        if (data.data && data.data.some(d => d.AI코멘트)) {
+          aiReportArea.style.display = 'block';
+          document.getElementById('ai-report-text').innerHTML = formatAIComments(data.data);
+        }
+      } else if (step.id === 'c') {
+        renderStepCDetails(data, detailsEl);
+        renderDataTable(data.trendResults, getFiltersForStep(step.id));
+        // AI 리포트 통합
+        if (data.aiReport) {
+          aiReportArea.style.display = 'block';
+          document.getElementById('ai-report-text').textContent = data.aiReport;
+        }
+      } else {
+        renderGenericDetails(data, detailsEl);
+        if (data.data) {
+          renderDataTable(data.data, getFiltersForStep(step.id));
+        } else {
+          resultsArea.style.display = 'none';
+        }
+      }
+    }
+
+    function renderStep0Details(data, container) {
+      const summary = data.summary;
+      container.innerHTML = `
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in">
+          <div class="stat-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <i class="ri-price-tag-3-line text-indigo-600"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-800">${summary.priceTable.count.toLocaleString()}</div>
+            <div class="text-xs text-slate-400 mt-1">단가테이블</div>
+            <div class="text-[10px] text-slate-300">${summary.priceTable.uniqueValveTypes} 밸브타입</div>
+          </div>
+          <div class="stat-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <i class="ri-file-list-3-line text-emerald-600"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-800">${summary.vendorQuotes.count.toLocaleString()}</div>
+            <div class="text-xs text-slate-400 mt-1">협력사 견적</div>
+            <div class="text-[10px] text-slate-300">${summary.vendorQuotes.mappedCount} 매핑완료</div>
+          </div>
+          <div class="stat-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                <i class="ri-history-line text-violet-600"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-800">${summary.performance.count.toLocaleString()}</div>
+            <div class="text-xs text-slate-400 mt-1">발주 실적</div>
+            <div class="text-[10px] text-slate-300">${summary.performance.validValveTypes.toLocaleString()} 유효건</div>
+          </div>
+          <div class="stat-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <i class="ri-line-chart-line text-amber-600"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-800">${summary.lme.count.toLocaleString()}</div>
+            <div class="text-xs text-slate-400 mt-1">LME 시황</div>
+            <div class="text-[10px] text-slate-300">2025년 월별</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStep0Table(data) {
+      const resultsArea = document.getElementById('results-area');
+      resultsArea.style.display = 'block';
+      
+      const filterBar = document.getElementById('filter-bar');
+      filterBar.innerHTML = `
+        <div class="flex gap-2">
+          <button onclick="showDataTab('priceTable')" class="tab-btn px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition" data-tab="priceTable">
+            단가테이블
+          </button>
+          <button onclick="showDataTab('vendorQuotes')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="vendorQuotes">
+            협력사 견적
+          </button>
+          <button onclick="showDataTab('performance')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="performance">
+            발주 실적
+          </button>
+          <button onclick="showDataTab('lme')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="lme">
+            LME 시황
+          </button>
+        </div>
+        <div class="text-xs text-slate-400">클릭하여 상세 조회</div>
+      `;
+      
+      renderDataTable(data.data.priceTable, []);
+    }
+
+    async function showDataTab(type) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-100', 'text-indigo-700');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+      });
+      const activeBtn = document.querySelector(`.tab-btn[data-tab="${type}"]`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+        activeBtn.classList.add('bg-indigo-100', 'text-indigo-700');
+      }
+      
+      const step0Data = stepData['0'];
+      if (step0Data?.data?.[type]) {
+        renderDataTable(step0Data.data[type], []);
+      } else {
+        const res = await fetch(`/api/data/${type}?limit=100`);
+        const data = await res.json();
+        renderDataTable(data.data, []);
+      }
+    }
+
+    function renderB3Details(data, container) {
+      const summary = data.summary || {};
+      const total = summary.total || 0;
+      container.innerHTML = `
+        <div class="space-y-4 fade-in">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">적정성 판정 기준</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+              ${(data.rules || []).map(r => `
+                <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
+                  <i class="ri-checkbox-circle-line text-indigo-500 mt-0.5 flex-shrink-0"></i>
+                  <span>${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${summary.우수 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">우수</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.우수||0)/total*100) : 0}%</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-2xl font-bold text-amber-600">${summary.보통 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">보통</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.보통||0)/total*100) : 0}%</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${summary.부적절 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">부적절</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.부적절||0)/total*100) : 0}%</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-slate-400">
+              <div class="text-2xl font-bold text-slate-600">${summary.판단불가 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">판단불가</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.판단불가||0)/total*100) : 0}%</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStepCDetails(data, container) {
+      const summary = data.summary || {};
+      const total = (summary.양호||0) + (summary.적정||0) + (summary.주의||0);
+      container.innerHTML = `
+        <div class="space-y-4 fade-in">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">시황 대비 분석 기준</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+              <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-slate-200">
+                <span class="badge badge-success">양호</span>
+                <span class="text-slate-600">시황↑ 발주가 유지/하락</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-slate-200">
+                <span class="badge badge-warning">적정</span>
+                <span class="text-slate-600">시황과 발주가 동일방향</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-slate-200">
+                <span class="badge badge-danger">주의</span>
+                <span class="text-slate-600">시황↓ 발주가 상승</span>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <div class="stat-card text-center">
+              <div class="text-2xl font-bold text-slate-800">${summary.targetCount?.toLocaleString() || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">분석 대상</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${summary.양호 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">양호</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.양호||0)/total*100) : 0}%</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-2xl font-bold text-amber-600">${summary.적정 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">적정</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.적정||0)/total*100) : 0}%</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${summary.주의 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">주의</div>
+              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.주의||0)/total*100) : 0}%</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGenericDetails(data, container) {
+      let summaryHtml = '';
+      if (data.summary) {
+        const entries = Object.entries(data.summary);
+        summaryHtml = `
+          <div class="grid grid-cols-2 md:grid-cols-${Math.min(entries.length, 4)} gap-3 mb-4">
+            ${entries.map(([key, val]) => `
+              <div class="stat-card text-center">
+                <div class="text-xl font-bold ${getValueColor(key, val)}">${typeof val === 'number' ? val.toLocaleString() : val}</div>
+                <div class="text-[10px] text-slate-400 mt-1">${key}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      let rulesHtml = '';
+      if (data.rules && data.rules.length > 0) {
+        rulesHtml = `
+          <div class="bg-slate-50 rounded-xl p-4 mb-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">산출/검증 기준</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              ${data.rules.map(r => `
+                <div class="flex items-start gap-2 text-xs text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
+                  <i class="ri-checkbox-circle-line text-indigo-500 mt-0.5 flex-shrink-0"></i>
+                  <span>${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = `<div class="fade-in">${rulesHtml}${summaryHtml}</div>`;
+    }
+
+    function formatAIComments(data) {
+      if (!data || data.length === 0) return '분석 결과가 없습니다.';
+      
+      const withComments = data.filter(c => c.AI코멘트);
+      if (withComments.length === 0) return '분석 결과가 없습니다.';
+      
+      return withComments.slice(0, 5).map((c, i) => `
+        <div class="mb-4 pb-4 ${i < 4 ? 'border-b border-violet-100' : ''}">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="font-semibold text-violet-800 text-sm">${c.자재번호 || c.No || `#${i+1}`}</span>
+            <span class="badge ${c.적정성 === '우수' ? 'badge-success' : c.적정성 === '보통' ? 'badge-warning' : 'badge-danger'}">${c.적정성}</span>
+          </div>
+          <p class="text-slate-600 text-sm leading-relaxed">${c.AI코멘트}</p>
+        </div>
+      `).join('');
+    }
+
+    function getValueColor(key, val) {
+      if (key === '우수' || key === '양호' || key === 'matched' || key === '동일내역') return 'text-emerald-600';
+      if (key === '부적절' || key === '주의' || key === 'unmatched' || key === '미매핑') return 'text-red-600';
+      if (key === '보통' || key === '적정' || key === '유사타입') return 'text-amber-600';
+      return 'text-slate-800';
+    }
+
+    function getFiltersForStep(stepId) {
+      const filterConfigs = {
+        'a1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }],
+        'a2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
+        'b1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }],
+        'b2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
+        'b3': [{ key: '적정성', options: ['전체', '우수', '보통', '부적절', '판단불가'] }],
+        'c': [{ key: '적정성', options: ['전체', '양호', '적정', '주의'] }]
+      };
+      return filterConfigs[stepId] || [];
+    }
+
+    function renderDataTable(data, filters) {
+      if (!data || data.length === 0) {
+        document.getElementById('results-area').style.display = 'none';
+        return;
+      }
+
+      const resultsArea = document.getElementById('results-area');
+      resultsArea.style.display = 'block';
+
+      const filterBar = document.getElementById('filter-bar');
+      if (filters.length > 0) {
+        filterBar.innerHTML = `
+          <div class="flex gap-3">
+            ${filters.map(f => `
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-semibold text-slate-500">${f.key}</label>
+                <select onchange="applyFilter('${f.key}', this.value)" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  ${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                </select>
+              </div>
+            `).join('')}
+          </div>
+          <div class="text-xs text-slate-400 font-medium" id="filter-count"></div>
+        `;
+      }
+
+      currentFilter = {};
+      currentPage = 1;
+      renderTableData(data);
+    }
+
+    function applyFilter(key, value) {
+      if (value === '전체') {
+        delete currentFilter[key];
+      } else {
+        currentFilter[key] = value;
+      }
+      currentPage = 1;
+      
+      const step = steps[currentStep];
+      const data = stepData[step.id]?.data || stepData[step.id]?.trendResults || [];
+      renderTableData(data);
+    }
+
+    function renderTableData(allData) {
+      let filteredData = allData;
+      for (const [key, value] of Object.entries(currentFilter)) {
+        filteredData = filteredData.filter(row => row[key] === value || row['적정성'] === value);
+      }
+
+      const filterCount = document.getElementById('filter-count');
+      if (filterCount) {
+        filterCount.textContent = `${filteredData.length.toLocaleString()}건`;
+      }
+
+      const totalPages = Math.ceil(filteredData.length / pageSize);
+      const startIdx = (currentPage - 1) * pageSize;
+      const pageData = filteredData.slice(startIdx, startIdx + pageSize);
+
+      const columns = pageData.length > 0 ? Object.keys(pageData[0]).filter(k => k !== 'AI코멘트') : [];
+      const headerEl = document.getElementById('table-header');
+      headerEl.innerHTML = columns.map(col => 
+        `<th class="px-3 py-3 text-left text-[11px] font-bold text-slate-500 bg-slate-50 whitespace-nowrap uppercase tracking-wider">${col}</th>`
+      ).join('');
+
+      const bodyEl = document.getElementById('table-body');
+      bodyEl.innerHTML = pageData.map((row, idx) => `
+        <tr class="hover:bg-indigo-50/50 transition-colors">
+          ${columns.map(col => `<td class="px-3 py-2.5 text-xs text-slate-700 whitespace-nowrap">${formatCellValue(col, row[col])}</td>`).join('')}
+        </tr>
+      `).join('');
+
+      document.getElementById('pagination-info').textContent = 
+        `${filteredData.length.toLocaleString()}건 중 ${startIdx + 1}-${Math.min(startIdx + pageSize, filteredData.length)}`;
+
+      const paginationControls = document.getElementById('pagination-controls');
+      if (totalPages > 1) {
+        let pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            pages.push(i);
+          } else if (pages[pages.length - 1] !== '...') {
+            pages.push('...');
+          }
+        }
+        
+        paginationControls.innerHTML = `
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-xs">
+            <i class="ri-arrow-left-s-line"></i>
+          </button>
+          ${pages.map(p => p === '...' 
+            ? '<span class="px-1 text-slate-400 text-xs">...</span>'
+            : `<button onclick="changePage(${p})" class="w-8 h-8 rounded-lg text-xs font-semibold ${p === currentPage ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-100'}">${p}</button>`
+          ).join('')}
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-xs">
+            <i class="ri-arrow-right-s-line"></i>
+          </button>
+        `;
+      } else {
+        paginationControls.innerHTML = '';
+      }
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      const step = steps[currentStep];
+      const data = stepData[step.id]?.data || stepData[step.id]?.trendResults || [];
+      renderTableData(data);
+    }
+
+    function formatCellValue(col, val) {
+      if (val === null || val === undefined || val === '') return '<span class="text-slate-300">-</span>';
+      
+      if (col === '매핑상태') {
+        return val === '성공' 
+          ? `<span class="badge badge-success text-[10px]"><i class="ri-check-line"></i> ${val}</span>`
+          : `<span class="badge badge-danger text-[10px]"><i class="ri-close-line"></i> ${val}</span>`;
+      }
+      if (col === '매핑유형') {
+        if (val === '동일내역') return `<span class="badge badge-success text-[10px]">${val}</span>`;
+        if (val === '유사타입') return `<span class="badge badge-warning text-[10px]">${val}</span>`;
+        return `<span class="badge badge-danger text-[10px]">${val}</span>`;
+      }
+      if (col === '적정성') {
+        if (val === '우수' || val === '양호') return `<span class="badge badge-success text-[10px]">${val}</span>`;
+        if (val === '보통' || val === '적정') return `<span class="badge badge-warning text-[10px]">${val}</span>`;
+        if (val === '부적절' || val === '주의') return `<span class="badge badge-danger text-[10px]">${val}</span>`;
+        return `<span class="badge badge-gray text-[10px]">${val}</span>`;
+      }
+
+      if (typeof val === 'number') {
+        if (col.includes('변동') || col.includes('%')) {
+          const color = val > 0 ? 'text-red-600' : val < 0 ? 'text-emerald-600' : 'text-slate-600';
+          return `<span class="${color} font-semibold">${val > 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+        }
+        if (col.includes('이익') || col.includes('손해')) {
+          const color = val > 0 ? 'text-emerald-600' : val < 0 ? 'text-red-600' : 'text-slate-600';
+          return `<span class="${color} font-semibold">${val > 0 ? '+' : ''}${val.toLocaleString()}</span>`;
+        }
+        if (col.includes('단가') || col.includes('금액') || col.includes('가') || col.includes('액')) {
+          return `<span class="font-medium">${val.toLocaleString()}</span>`;
+        }
+        return val.toLocaleString();
+      }
+
+      if (typeof val === 'string' && val.length > 35) {
+        return `<span title="${val}" class="cursor-help">${val.substring(0, 32)}...</span>`;
+      }
+
+      return val;
+    }
+  </script>
+</body>
+</html>
