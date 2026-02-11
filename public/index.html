@@ -561,6 +561,11 @@
           document.getElementById('ai-report-text').innerHTML = formatAIComments(data.data);
         }
       } else if (step.id === 'c') {
+        // Step C: Agent가 시황 정보를 가져오는 것처럼 표시
+        msgEl.innerHTML = `<span class="fade-in">🌐 LME 원자재 시황 데이터를 수집하고 분석 중입니다...</span>`;
+        setTimeout(() => {
+          msgEl.innerHTML = `<span class="fade-in">✅ LME 시황 데이터 수집 완료! 발주가격 트렌드를 분석합니다.</span>`;
+        }, 800);
         renderStepCDetails(data, detailsEl);
         renderDataTable(data.trendResults, getFiltersForStep(step.id));
         // AI 리포트 통합
@@ -581,7 +586,7 @@
     function renderStep0Details(data, container) {
       const summary = data.summary;
       container.innerHTML = `
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 fade-in">
+        <div class="grid grid-cols-3 gap-3 fade-in">
           <div class="stat-card">
             <div class="flex items-center gap-2 mb-2">
               <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
@@ -612,16 +617,6 @@
             <div class="text-xs text-slate-400 mt-1">발주 실적</div>
             <div class="text-[10px] text-slate-300">${summary.performance.validValveTypes.toLocaleString()} 유효건</div>
           </div>
-          <div class="stat-card">
-            <div class="flex items-center gap-2 mb-2">
-              <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                <i class="ri-line-chart-line text-amber-600"></i>
-              </div>
-            </div>
-            <div class="text-2xl font-bold text-slate-800">${summary.lme.count.toLocaleString()}</div>
-            <div class="text-xs text-slate-400 mt-1">LME 시황</div>
-            <div class="text-[10px] text-slate-300">2025년 월별</div>
-          </div>
         </div>
       `;
     }
@@ -641,9 +636,6 @@
           </button>
           <button onclick="showDataTab('performance')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="performance">
             발주 실적
-          </button>
-          <button onclick="showDataTab('lme')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="lme">
-            LME 시황
           </button>
         </div>
         <div class="text-xs text-slate-400">클릭하여 상세 조회</div>

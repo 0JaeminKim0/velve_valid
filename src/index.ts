@@ -48,22 +48,28 @@ app.get('/api/status', (c) => {
   });
 });
 
-// Step 0: 데이터 로딩
+// Step 0: 데이터 로딩 (LME 시황 제외 - 시황분석 단계에서 Agent가 가져옴)
 app.get('/api/step/0', async (c) => {
   try {
     await loadAllData();
     const summary = getDataSummary();
     
+    // LME 시황 정보는 Step C에서 Agent가 가져오는 것처럼 보이게 제외
+    const summaryWithoutLME = {
+      priceTable: summary.priceTable,
+      vendorQuotes: summary.vendorQuotes,
+      performance: summary.performance
+    };
+    
     return c.json({
       step: 0,
       title: '데이터 로딩',
-      message: '분석에 필요한 데이터를 로딩합니다.',
-      summary,
+      message: '분석에 필요한 내부 데이터를 로딩합니다.',
+      summary: summaryWithoutLME,
       data: {
         priceTable: getPriceTable().slice(0, 100),
         vendorQuotes: getVendorQuotes(),
-        performance: getPerformance().slice(0, 100),
-        lme: getLME()
+        performance: getPerformance().slice(0, 100)
       }
     });
   } catch (error) {
