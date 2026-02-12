@@ -33,51 +33,81 @@ export interface StepA1Result {
   계약업체: string;
 }
 
-// PR 대상 건 생성 - 약 1760건만 선별
+// 타입 추출 함수 (밸브타입에서 사이즈 부분 제거, 앞 알파벳만)
+function extractTypePrefix(vtype: string): string {
+  const match = vtype.match(/^([A-Z]+)/);
+  return match ? match[1] : vtype.slice(0, 6);
+}
+
+// PR 대상 건 생성 - 1,150건 (95%:4%:1% 비율)
 export function generatePRItems(): PRItem[] {
   const performance = getPerformance();
   const priceTable = getPriceTable();
   
-  // 단가테이블에 있는 밸브타입만 필터 (단가매핑 가능한 건만)
-  // Performance의 Valve Type에서 끝 1글자(T)를 제거하면 Price Table의 밸브타입과 매칭됨
-  const validValveTypes = new Set(priceTable.map(pt => pt.밸브타입));
+  // 단가테이블의 밸브타입 Set (타입+사이즈일치용)
+  const priceVtypes = new Set(priceTable.map(pt => pt.밸브타입));
   
-  // 유효한 밸브타입만 필터 - vtype_key (끝 1글자 제거)로 매칭
-  const validPerf = performance.filter(r => {
-    const vtype = r['Valve Type'];
-    if (!vtype || vtype === 'nan') return false;
-    // 밸브타입 끝 1글자 제거하여 단가테이블과 매칭 (VGBASW3A0AT -> VGBASW3A0A)
-    const vtypeKey = vtype.slice(0, -1);
-    return validValveTypes.has(vtypeKey);
-  });
+  // 단가테이블의 타입만 추출한 Set (타입일치용)
+  const priceTypePrefixes = new Set([...priceVtypes].map(v => extractTypePrefix(v)));
   
   // 발주일 기준 내림차순 정렬
+  const validPerf = performance.filter(r => r['Valve Type'] && r['Valve Type'] !== 'nan');
   validPerf.sort((a, b) => {
     const dateA = new Date(a.발주일 as string).getTime();
     const dateB = new Date(b.발주일 as string).getTime();
     return dateB - dateA;
   });
 
-  // 밸브타입 + 내역 조합별 대표 건 선정
+  // 밸브타입 + 내역 조합별 대표 건 선정 및 매핑유형 분류
   const seen = new Set<string>();
-  const prItems: PRItem[] = [];
+  const 타입사이즈일치Items: PRItem[] = [];
+  const 타입일치Items: PRItem[] = [];
+  const 매핑실패Items: PRItem[] = [];
 
   for (const row of validPerf) {
     const key = `${row['Valve Type']}|${row.내역}`;
     if (!seen.has(key)) {
       seen.add(key);
-      prItems.push({
+      
+      const vtype = row['Valve Type'];
+      const vtypeKey = vtype.slice(0, -1);  // 끝 1글자 제거
+      const typePrefix = extractTypePrefix(vtype);
+      
+      const prItem: PRItem = {
         자재번호: row.자재번호,
         내역: row.내역,
-        밸브타입: row['Valve Type'],
-        vtype_key: row.vtype_key || '',
+        밸브타입: vtype,
+        vtype_key: row.vtype_key || vtypeKey,
         요청수량: row.요청수량,
         발주금액: row['발주금액-변환'],
         발주일: String(row.발주일).slice(0, 10),
         발주업체: row.발주업체 || ''
-      });
+      };
+      
+      // 매핑유형에 따라 분류
+      if (priceVtypes.has(vtypeKey)) {
+        타입사이즈일치Items.push(prItem);
+      } else if (priceTypePrefixes.has(typePrefix)) {
+        타입일치Items.push(prItem);
+      } else {
+        매핑실패Items.push(prItem);
+      }
     }
   }
+
+  // 목표: 1,150건 (95%:4%:1%)
+  const totalTarget = 1150;
+  const 타입사이즈일치Target = Math.round(totalTarget * 0.95);  // 1,093
+  const 타입일치Target = Math.round(totalTarget * 0.04);        // 46
+  const 매핑실패Target = totalTarget - 타입사이즈일치Target - 타입일치Target;  // 11
+
+  // 각 카테고리에서 목표 수만큼 샘플링
+  const sampled타입사이즈일치 = 타입사이즈일치Items.slice(0, 타입사이즈일치Target);
+  const sampled타입일치 = 타입일치Items.slice(0, 타입일치Target);
+  const sampled매핑실패 = 매핑실패Items.slice(0, 매핑실패Target);
+
+  // 합치기 (타입+사이즈일치 → 타입일치 → 매핑실패 순서)
+  const prItems = [...sampled타입사이즈일치, ...sampled타입일치, ...sampled매핑실패];
 
   return prItems;
 }
@@ -136,21 +166,25 @@ export function executeStepA1(): {
   const priceTable = getPriceTable();
   const results: StepA1Result[] = [];
 
-  // 타입만으로 매핑하기 위한 보조 lookup
+  // 단가테이블의 밸브타입 Set
+  const priceVtypes = new Set(priceTable.map(pt => pt.밸브타입));
+  
+  // 타입(prefix)만으로 매핑하기 위한 보조 lookup
   const typeOnlyLookup = new Map<string, any[]>();
   for (const pt of priceTable) {
-    const vtype = pt.밸브타입;
-    if (vtype) {
-      if (!typeOnlyLookup.has(vtype)) {
-        typeOnlyLookup.set(vtype, []);
+    const typePrefix = extractTypePrefix(pt.밸브타입);
+    if (typePrefix) {
+      if (!typeOnlyLookup.has(typePrefix)) {
+        typeOnlyLookup.set(typePrefix, []);
       }
-      typeOnlyLookup.get(vtype)!.push(pt);
+      typeOnlyLookup.get(typePrefix)!.push(pt);
     }
   }
 
   for (const pr of prItems) {
-    const vk = pr.vtype_key;
     const vtype = pr.밸브타입;
+    const vtypeKey = vtype.slice(0, -1);  // 끝 1글자 제거
+    const typePrefix = extractTypePrefix(vtype);
     const desc = pr.내역;
     const qty = pr.요청수량 > 0 ? pr.요청수량 : 1;
     const descOpts = parseOptionsFromDesc(desc);
@@ -171,12 +205,12 @@ export function executeStepA1(): {
     };
 
     // 1순위: vtype_key (타입+사이즈) 매핑
-    let priceRows = priceLookup.get(vk);
+    let priceRows = priceLookup.get(vtypeKey);
     let mappingType = '타입+사이즈일치';
     
-    // 2순위: 타입만 매핑
+    // 2순위: 타입(prefix)만 매핑
     if (!priceRows || priceRows.length === 0) {
-      priceRows = typeOnlyLookup.get(vtype);
+      priceRows = typeOnlyLookup.get(typePrefix);
       mappingType = '타입일치';
     }
 
