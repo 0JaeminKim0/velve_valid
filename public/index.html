@@ -931,15 +931,39 @@
 
       // 숨길 컬럼 목록
       const hideColumns = ['AI코멘트', 'vtype_key', '옵션상세'];
-      const columns = pageData.length > 0 ? Object.keys(pageData[0]).filter(k => !hideColumns.includes(k)) : [];
+      let columns = pageData.length > 0 ? Object.keys(pageData[0]).filter(k => !hideColumns.includes(k)) : [];
+      
+      // B3 적정성 단계에서 '시황' 컬럼 추가
+      const isB3Step = currentSet === 2 && sets[2].steps[currentStepIndex]?.id === 'b3';
+      if (isB3Step && columns.length > 0 && !columns.includes('시황')) {
+        // 적정성 컬럼 다음에 시황 컬럼 추가
+        const idx = columns.indexOf('적정성');
+        if (idx !== -1) {
+          columns.splice(idx + 1, 0, '시황');
+        } else {
+          columns.push('시황');
+        }
+      }
       
       document.getElementById('table-header').innerHTML = columns.map(col => 
         `<th class="px-3 py-2.5 text-left text-[10px] font-bold text-slate-500 bg-slate-50 whitespace-nowrap uppercase tracking-wider">${col}</th>`
       ).join('');
 
-      document.getElementById('table-body').innerHTML = pageData.map(row => `
-        <tr class="hover:bg-indigo-50/50 transition-colors">
-          ${columns.map(col => `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${formatCellValue(col, row[col])}</td>`).join('')}
+      document.getElementById('table-body').innerHTML = pageData.map((row, idx) => `
+        <tr class="hover:bg-indigo-50/50 transition-colors" data-row-idx="${startIdx + idx}">
+          ${columns.map(col => {
+            if (col === '시황' && isB3Step) {
+              // 시황 버튼 렌더링
+              const valveType = row['밸브타입'] || row['자재내역'] || '';
+              return `<td class="px-3 py-2 text-xs whitespace-nowrap">
+                <button onclick="openMarketPopup('${valveType.replace(/'/g, "\\'")}', ${row.No || 0})" 
+                        class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition text-[10px] font-medium">
+                  <i class="ri-line-chart-line"></i> 시황
+                </button>
+              </td>`;
+            }
+            return `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${formatCellValue(col, row[col])}</td>`;
+          }).join('')}
         </tr>
       `).join('');
 
@@ -1272,6 +1296,217 @@
       }
 
       document.getElementById('diff-items-list').innerHTML = renderDiffItemsList(items);
+    }
+
+    // 시황 분석 팝업
+    let marketPopupData = null;
+
+    async function openMarketPopup(valveType, itemNo) {
+      // 모달 생성
+      const modal = document.createElement('div');
+      modal.id = 'market-popup-modal';
+      modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl w-[95%] max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl">
+          <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="ri-line-chart-line text-white text-xl"></i>
+              <div>
+                <h2 class="text-white font-bold text-lg">시황 분석</h2>
+                <p class="text-white/80 text-xs">No.${itemNo} - ${valveType || '전체'}</p>
+              </div>
+            </div>
+            <button onclick="closeMarketPopup()" class="text-white/80 hover:text-white text-2xl">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 80px);" id="market-popup-content">
+            <div class="flex items-center justify-center py-12">
+              <span class="text-slate-400">시황 데이터 로딩 중...</span>
+              <span class="typing-dot inline-block w-1.5 h-1.5 bg-amber-500 rounded-full ml-2"></span>
+              <span class="typing-dot inline-block w-1.5 h-1.5 bg-amber-500 rounded-full ml-1"></span>
+              <span class="typing-dot inline-block w-1.5 h-1.5 bg-amber-500 rounded-full ml-1"></span>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      try {
+        const res = await fetch('/api/step/c');
+        const data = await res.json();
+        marketPopupData = data;
+        renderMarketPopup(data, valveType, itemNo);
+      } catch (e) {
+        document.getElementById('market-popup-content').innerHTML = `
+          <div class="text-red-600 text-center py-8">오류 발생: ${e.message}</div>
+        `;
+      }
+    }
+
+    function closeMarketPopup() {
+      const modal = document.getElementById('market-popup-modal');
+      if (modal) modal.remove();
+    }
+
+    function renderMarketPopup(data, valveType, itemNo) {
+      const content = document.getElementById('market-popup-content');
+      const yearSummary = data.yearSummary || {};
+      const targetInfo = data.targetInfo || {};
+      const trendResults = data.trendResults || [];
+      const summary = data.summary || {};
+
+      content.innerHTML = `
+        <div class="space-y-6">
+          <!-- 타겟 정보 -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="ri-focus-3-line text-amber-600"></i>
+              <h3 class="font-semibold text-amber-800 text-sm">분석 대상</h3>
+            </div>
+            <div class="grid grid-cols-4 gap-4 text-xs">
+              <div>
+                <span class="text-slate-500">밸브타입:</span>
+                <span class="font-medium text-slate-700 ml-1">${targetInfo.valveType || '-'}</span>
+              </div>
+              <div>
+                <span class="text-slate-500">재질:</span>
+                <span class="font-medium text-slate-700 ml-1">${targetInfo.material || '-'}</span>
+              </div>
+              <div>
+                <span class="text-slate-500">조건:</span>
+                <span class="font-medium text-slate-700 ml-1">${targetInfo.excludeLock ? 'LOCK 제외' : '-'}, ${targetInfo.suffix || '-'}</span>
+              </div>
+              <div>
+                <span class="text-slate-500">대상 건수:</span>
+                <span class="font-medium text-slate-700 ml-1">${(summary.targetCount || 0).toLocaleString()}건</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2025년 요약 -->
+          <div class="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4">
+            <h3 class="font-semibold text-slate-700 text-sm mb-3 flex items-center gap-2">
+              <i class="ri-calendar-line text-indigo-500"></i>
+              2025년 전체 요약 (${yearSummary.period || '-'})
+            </h3>
+            <div class="grid grid-cols-6 gap-3">
+              <div class="bg-white rounded-lg p-3 text-center border border-slate-200">
+                <div class="text-lg font-bold text-slate-800">${(yearSummary.avgPrice || 0).toLocaleString()}</div>
+                <div class="text-[10px] text-slate-400">평균단가</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-slate-200">
+                <div class="text-lg font-bold text-slate-800">${(yearSummary.totalOrders || 0).toLocaleString()}</div>
+                <div class="text-[10px] text-slate-400">총 발주건수</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-slate-200">
+                <div class="text-lg font-bold text-slate-800">${(yearSummary.totalAmount || 0).toLocaleString()}</div>
+                <div class="text-[10px] text-slate-400">총 발주금액</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-slate-200">
+                <div class="text-lg font-bold ${yearSummary.priceChange > 0 ? 'text-red-600' : yearSummary.priceChange < 0 ? 'text-emerald-600' : 'text-slate-600'}">
+                  ${yearSummary.priceChange > 0 ? '+' : ''}${yearSummary.priceChange || 0}%
+                </div>
+                <div class="text-[10px] text-slate-400">단가변동</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-slate-200">
+                <div class="text-lg font-bold ${yearSummary.marketChange > 0 ? 'text-red-600' : yearSummary.marketChange < 0 ? 'text-emerald-600' : 'text-slate-600'}">
+                  ${yearSummary.marketChange > 0 ? '+' : ''}${yearSummary.marketChange || 0}%
+                </div>
+                <div class="text-[10px] text-slate-400">시황변동</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border ${yearSummary.estimatedPL >= 0 ? 'border-emerald-300 bg-emerald-50' : 'border-red-300 bg-red-50'}">
+                <div class="text-lg font-bold ${yearSummary.estimatedPL >= 0 ? 'text-emerald-600' : 'text-red-600'}">
+                  ${yearSummary.estimatedPL >= 0 ? '+' : ''}${(yearSummary.estimatedPL || 0).toLocaleString()}
+                </div>
+                <div class="text-[10px] text-slate-400">${yearSummary.estimatedPL >= 0 ? '추정이익' : '추정손해'}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 적정성 요약 -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${summary.양호 || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">양호</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-2xl font-bold text-amber-600">${summary.적정 || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">적정</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${summary.주의 || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">주의</div>
+            </div>
+          </div>
+
+          <!-- 트렌드 테이블 -->
+          <div>
+            <h3 class="font-semibold text-slate-700 text-sm mb-3 flex items-center gap-2">
+              <i class="ri-table-line text-indigo-500"></i>
+              월별 시황 트렌드
+            </h3>
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <div class="max-h-80 overflow-auto">
+                <table class="w-full text-xs">
+                  <thead class="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th class="px-3 py-2 text-left font-semibold text-slate-600">업체</th>
+                      <th class="px-3 py-2 text-left font-semibold text-slate-600">기간</th>
+                      <th class="px-3 py-2 text-right font-semibold text-slate-600">이전단가</th>
+                      <th class="px-3 py-2 text-right font-semibold text-slate-600">현재단가</th>
+                      <th class="px-3 py-2 text-right font-semibold text-slate-600">단가변동</th>
+                      <th class="px-3 py-2 text-right font-semibold text-slate-600">시황변동</th>
+                      <th class="px-3 py-2 text-right font-semibold text-slate-600">추정이익/손해</th>
+                      <th class="px-3 py-2 text-center font-semibold text-slate-600">적정성</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${trendResults.map(row => {
+                      const plValue = row['추정이익/손해액'] || 0;
+                      const plClass = plValue > 0 ? 'text-emerald-600' : plValue < 0 ? 'text-red-600' : 'text-slate-600';
+                      const priceChangeVal = row['단가변동(%)'] || 0;
+                      const marketChangeVal = row['시황변동(%)'] || 0;
+                      const priceClass = priceChangeVal > 0 ? 'text-red-600' : priceChangeVal < 0 ? 'text-emerald-600' : 'text-slate-600';
+                      const marketClass = marketChangeVal > 0 ? 'text-red-600' : marketChangeVal < 0 ? 'text-emerald-600' : 'text-slate-600';
+                      
+                      let judgmentBadge = '';
+                      if (row.적정성 === '양호') judgmentBadge = '<span class="badge badge-success text-[10px]">양호</span>';
+                      else if (row.적정성 === '적정') judgmentBadge = '<span class="badge badge-warning text-[10px]">적정</span>';
+                      else if (row.적정성 === '주의') judgmentBadge = '<span class="badge badge-danger text-[10px]">주의</span>';
+                      else judgmentBadge = '<span class="badge badge-gray text-[10px]">' + (row.적정성 || '-') + '</span>';
+                      
+                      return `
+                        <tr class="hover:bg-amber-50/50">
+                          <td class="px-3 py-2 text-slate-700">${row.업체 || '-'}</td>
+                          <td class="px-3 py-2 text-slate-600">${row.기간 || '-'}</td>
+                          <td class="px-3 py-2 text-right font-medium">${(row.이전단가 || 0).toLocaleString()}</td>
+                          <td class="px-3 py-2 text-right font-medium">${(row.현재단가 || 0).toLocaleString()}</td>
+                          <td class="px-3 py-2 text-right font-semibold ${priceClass}">${priceChangeVal > 0 ? '+' : ''}${priceChangeVal}%</td>
+                          <td class="px-3 py-2 text-right font-semibold ${marketClass}">${marketChangeVal > 0 ? '+' : ''}${marketChangeVal}%</td>
+                          <td class="px-3 py-2 text-right font-semibold ${plClass}">${plValue > 0 ? '+' : ''}${plValue.toLocaleString()}</td>
+                          <td class="px-3 py-2 text-center">${judgmentBadge}</td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI 리포트 -->
+          ${data.aiReport ? `
+          <div class="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="ri-sparkling-2-fill text-violet-600"></i>
+              <h3 class="font-semibold text-violet-800 text-sm">AI 분석 리포트</h3>
+            </div>
+            <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed">${data.aiReport}</p>
+          </div>
+          ` : ''}
+        </div>
+      `;
     }
   </script>
 </body>
