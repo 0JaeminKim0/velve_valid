@@ -13,8 +13,8 @@ import {
   getPerformance, 
   getLME 
 } from './services/dataLoader';
-import { executeStepA1, executeStepA2, generatePRItems } from './services/stepA';
-import { executeStepB1, executeStepB2, executeStepB3 } from './services/stepB';
+import { executeStepA1, executeStepA2, generatePRItems, getPRData } from './services/stepA';
+import { executeStepB1, executeStepB2, executeStepB3, getQuoteData } from './services/stepB';
 import { executeStepC, getLMEData, getMonthlyVendorPrices } from './services/stepC';
 import { 
   generateItemComment, 
@@ -48,24 +48,61 @@ app.get('/api/status', (c) => {
   });
 });
 
-// Step 0: 데이터 로딩 (LME 시황 제외 - 시황분석 단계에서 Agent가 가져옴)
+// ==================== Set 1: PR 단가 추천 ====================
+
+// Set1-PR: PR 접수 데이터 조회
+app.get('/api/set1/pr', async (c) => {
+  try {
+    await loadAllData();
+    const result = getPRData();
+    
+    return c.json({
+      step: 'PR',
+      title: 'PR 접수',
+      message: `구매요청 ${result.summary.total.toLocaleString()}건을 접수했습니다. (${result.summary.uniqueTypes}개 밸브타입)`,
+      ...result
+    });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
+// ==================== Set 2: 업체 견적 검증 ====================
+
+// Set2-Quote: 견적 수신 데이터 조회
+app.get('/api/set2/quote', async (c) => {
+  try {
+    await loadAllData();
+    const result = getQuoteData();
+    
+    return c.json({
+      step: 'Quote',
+      title: '견적 수신',
+      message: `협력사 견적 ${result.summary.total}건을 수신했습니다. (${result.summary.uniqueTypes}개 밸브타입)`,
+      ...result
+    });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
+// ==================== Legacy API (호환용) ====================
+
+// Step 0: 데이터 로딩
 app.get('/api/step/0', async (c) => {
   try {
     await loadAllData();
     const summary = getDataSummary();
     
-    // LME 시황 정보는 Step C에서 Agent가 가져오는 것처럼 보이게 제외
-    const summaryWithoutLME = {
-      priceTable: summary.priceTable,
-      vendorQuotes: summary.vendorQuotes,
-      performance: summary.performance
-    };
-    
     return c.json({
       step: 0,
       title: '데이터 로딩',
       message: '분석에 필요한 내부 데이터를 로딩합니다.',
-      summary: summaryWithoutLME,
+      summary: {
+        priceTable: summary.priceTable,
+        vendorQuotes: summary.vendorQuotes,
+        performance: summary.performance
+      },
       data: {
         priceTable: getPriceTable().slice(0, 100),
         vendorQuotes: getVendorQuotes(),
@@ -148,21 +185,16 @@ app.get('/api/step/1', async (c) => {
   });
 });
 
-// Step A-1: 계약단가 기준 추천가
+// Step A-1: 계약단가 기준 추천가 (단가TBL 매핑)
 app.get('/api/step/a1', async (c) => {
   await loadAllData();
   const result = executeStepA1();
 
   return c.json({
     step: 'A-1',
-    title: '계약단가 기준 추천가 산출',
-    message: '단가테이블 기준으로 추천 단가를 산출합니다.',
-    rules: [
-      '밸브타입 매핑: 밸브타입 코드로 단가테이블 연결',
-      '본체가 산출: BODY2 계약단가 적용',
-      '옵션가 산출: 자재내역의 옵션(도장/부속품) 항목별 단가 합산',
-      '수량 환산: 요청수량 기준 총액 계산'
-    ],
+    title: '단가TBL 매핑',
+    message: '계약 단가테이블 기준으로 추천 단가를 산출합니다.',
+    rules: result.rules,
     summary: result.summary,
     data: result.results
   });
@@ -175,14 +207,9 @@ app.get('/api/step/a2', async (c) => {
 
   return c.json({
     step: 'A-2',
-    title: '발주실적 기준 예상가 산출',
+    title: '발주실적 매핑',
     message: '과거 발주 실적 기준으로 예상 단가를 산출합니다.',
-    rules: [
-      '동일내역 매핑: 밸브타입 + 자재내역 100% 일치 건 우선 적용',
-      '유사타입 매핑: 동일내역 없을 시 밸브타입만 일치 건 적용',
-      '최근 발주가 적용: 가장 최근 발주 건의 단가 기준',
-      '수량 환산: 요청수량 기준 총액 계산'
-    ],
+    rules: result.rules,
     summary: result.summary,
     data: result.results
   });
@@ -195,14 +222,9 @@ app.get('/api/step/b1', async (c) => {
 
   return c.json({
     step: 'B-1',
-    title: '견적 vs 계약단가 비교',
+    title: '계약단가 비교',
     message: '협력사 견적을 계약단가 기준으로 검증합니다.',
-    rules: [
-      '밸브타입 매핑: 밸브타입 코드로 단가테이블 연결',
-      '본체가 비교: BODY2 계약단가 적용',
-      '옵션가 비교: 내부도장/외부도장/상세사양 항목별 단가 적용',
-      '수량 환산: 견적수량 기준 총액 계산'
-    ],
+    rules: result.rules,
     summary: result.summary,
     data: result.results
   });
@@ -215,13 +237,9 @@ app.get('/api/step/b2', async (c) => {
 
   return c.json({
     step: 'B-2',
-    title: '견적 vs 발주실적 비교',
+    title: '발주실적 비교',
     message: '협력사 견적을 과거 발주실적 기준으로 검증합니다.',
-    rules: [
-      '동일내역 매핑: 밸브타입 + 자재내역 100% 일치 건 우선 비교',
-      '유사타입 매핑: 동일내역 없을 시 밸브타입만 일치 건 비교',
-      '수량 환산: 견적수량 기준 총액 계산'
-    ],
+    rules: result.rules,
     summary: result.summary,
     data: result.results
   });
@@ -309,7 +327,7 @@ app.post('/api/step/b4/all', async (c) => {
   return c.redirect('/api/step/b3');
 })
 
-// Step C: 시황 분석 + AI 리포트 통합 (LME 그래프 제외)
+// Step C: 시황 분석 + AI 리포트 통합
 app.get('/api/step/c', async (c) => {
   await loadAllData();
   const result = executeStepC();
@@ -320,16 +338,13 @@ app.get('/api/step/c', async (c) => {
   return c.json({
     step: 'C',
     title: '시황 분석 + AI 리포트',
-    message: 'LME 원자재 시황 대비 발주가격 트렌드를 분석하고 AI 리포트를 생성합니다.',
-    target: {
-      밸브타입: 'VGBARR240AT (Bronze Casting, Cu+Sn 합금)',
-      조건: 'LOCK 옵션 제외, TR 타입만',
-      원재료비중: '80%'
-    },
+    message: '🌐 LME 원자재 시황 데이터를 수집하고 발주가격 트렌드를 분석합니다.',
+    targetInfo: result.targetInfo,
+    yearSummary: result.yearSummary,
     rules: [
-      '양호(Good): 시황 상승 시 발주가 유지/하락',
-      '적정(Normal): 시황과 발주가 동일 방향 변동',
-      '주의(Bad): 시황 유지/하락 시 발주가 상승'
+      '양호: 시황↑ 단가 유지/하락',
+      '적정: 시황과 단가 동일방향',
+      '주의: 시황↓ 단가 상승'
     ],
     summary: result.summary,
     monthlyPrices: result.monthlyPrices,

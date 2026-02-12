@@ -31,6 +31,13 @@ export interface MarketTrendResult {
   적정성: string;
 }
 
+// 타겟 밸브 정보
+const TARGET_VALVE = {
+  valveType: 'VGBARR240AT',
+  description: 'Bronze Casting 밸브 (Cu+Sn 합금), LOCK 옵션 제외, TR 타입만',
+  material: 'Bronze (Cu 88% + Sn 12%)'
+};
+
 // LME 데이터 파싱
 export function getLMEData(): LMEData[] {
   const lme = getLME();
@@ -63,7 +70,7 @@ export function getMonthlyVendorPrices(): MonthlyVendorPrice[] {
     const vtype = row['Valve Type'];
     const desc = row.내역 || '';
     return (
-      vtype === 'VGBARR240AT' &&
+      vtype === TARGET_VALVE.valveType &&
       !desc.toUpperCase().includes('LOCK') &&
       desc.trim().endsWith('TR')
     );
@@ -111,9 +118,48 @@ export function getMonthlyVendorPrices(): MonthlyVendorPrice[] {
   }
 
   return results.sort((a, b) => {
-    if (a.발주업체 !== b.발주업체) return a.발주업체.localeCompare(b.발주업체);
-    return a.발주연월.localeCompare(b.발주연월);
+    if (a.발주연월 !== b.발주연월) return a.발주연월.localeCompare(b.발주연월);
+    return a.발주업체.localeCompare(b.발주업체);
   });
+}
+
+// 2025년 전체 요약 계산
+function getYearSummary(monthlyPrices: MonthlyVendorPrice[], lmeData: LMEData[]) {
+  if (monthlyPrices.length === 0) return null;
+
+  const prices2025 = monthlyPrices.filter(p => p.발주연월.startsWith('2025'));
+  if (prices2025.length === 0) return null;
+
+  const totalOrders = prices2025.reduce((sum, p) => sum + p.건수, 0);
+  const avgPrice = prices2025.reduce((sum, p) => sum + p.평균단가 * p.건수, 0) / totalOrders;
+
+  // 첫달과 마지막달 비교
+  const sorted = [...prices2025].sort((a, b) => a.발주연월.localeCompare(b.발주연월));
+  const firstMonth = sorted[0];
+  const lastMonth = sorted[sorted.length - 1];
+  
+  const priceChange = firstMonth.평균단가 > 0 
+    ? (lastMonth.평균단가 - firstMonth.평균단가) / firstMonth.평균단가 * 100 
+    : 0;
+
+  // LME 변동
+  const lmeSorted = lmeData.filter(l => l.연월.startsWith('2025')).sort((a, b) => a.연월.localeCompare(b.연월));
+  let marketChange = 0;
+  if (lmeSorted.length >= 2) {
+    const firstLme = lmeSorted[0];
+    const lastLme = lmeSorted[lmeSorted.length - 1];
+    marketChange = firstLme.Bronze환산 > 0
+      ? (lastLme.Bronze환산 - firstLme.Bronze환산) / firstLme.Bronze환산 * 100
+      : 0;
+  }
+
+  return {
+    avgPrice: Math.round(avgPrice),
+    totalOrders,
+    priceChange: Math.round(priceChange * 10) / 10,
+    marketChange: Math.round(marketChange * 10) / 10,
+    period: `${firstMonth.발주연월} ~ ${lastMonth.발주연월}`
+  };
 }
 
 // 시황 대비 가격 트렌드 분석
@@ -121,6 +167,8 @@ export function executeStepC(): {
   lmeData: LMEData[];
   monthlyPrices: MonthlyVendorPrice[];
   trendResults: MarketTrendResult[];
+  targetInfo: typeof TARGET_VALVE;
+  yearSummary: ReturnType<typeof getYearSummary>;
   summary: {
     targetCount: number;
     양호: number;
@@ -134,7 +182,7 @@ export function executeStepC(): {
   // LME lookup
   const lmeLookup = new Map(lmeData.map(d => [d.연월, d]));
 
-  // 트렌드 분석
+  // 트렌드 분석 - 월별로 정렬하여 표시
   const trendResults: MarketTrendResult[] = [];
   const vendors = [...new Set(monthlyPrices.map(p => p.발주업체))];
 
@@ -167,26 +215,18 @@ export function executeStepC(): {
         : 0;
 
       // 추정이익/손해액 계산
-      // Case 1: 둘 다 변동 있음 → 기존 식
-      // Case 2: 단가변동=0, 시황변동≠0 → 시황 움직임 대비 단가 유지 = 이익(+)/손해(-)
-      // Case 3: 시황변동=0, 단가변동≠0 → 시황 무변동 대비 단가 움직임 = 손해
-      // Case 4: 둘 다 0 → 0원
-      const pc = priceChange;  // 단가변동(%)
-      const mc = marketChange; // 시황변동(%)
+      const pc = priceChange;
+      const mc = marketChange;
       const halfMc = mc !== 0 ? mc / 2 : 0;
       
       let estPL = 0;
       if (pc !== 0 && halfMc !== 0) {
-        // Case 1: 둘 다 변동
         estPL = Math.round(curr.평균단가 * (pc / halfMc));
       } else if (pc === 0 && mc !== 0) {
-        // Case 2: 시황이 움직였는데 단가 유지 → 시황 상승분 = 이익, 하락분 = 손해
         estPL = Math.round(curr.평균단가 * (mc / 100));
       } else if (mc === 0 && pc !== 0) {
-        // Case 3: 시황 안 움직였는데 단가 변동 → 단가 상승 = 손해, 하락 = 이익
         estPL = Math.round(curr.평균단가 * (-pc / 100));
       } else {
-        // Case 4: 둘 다 0
         estPL = 0;
       }
 
@@ -205,22 +245,30 @@ export function executeStepC(): {
     }
   }
 
-  // 대상 건수 (VGBARR240AT 필터링된 건수)
+  // 기간 기준으로 정렬 (최신순)
+  trendResults.sort((a, b) => b.기간.localeCompare(a.기간));
+
+  // 대상 건수
   const performance = getPerformance();
   const targetCount = performance.filter(row => {
     const vtype = row['Valve Type'];
     const desc = row.내역 || '';
     return (
-      vtype === 'VGBARR240AT' &&
+      vtype === TARGET_VALVE.valveType &&
       !desc.toUpperCase().includes('LOCK') &&
       desc.trim().endsWith('TR')
     );
   }).length;
 
+  // 연간 요약
+  const yearSummary = getYearSummary(monthlyPrices, lmeData);
+
   return {
     lmeData,
     monthlyPrices,
     trendResults,
+    targetInfo: TARGET_VALVE,
+    yearSummary,
     summary: {
       targetCount,
       양호: trendResults.filter(r => r.적정성 === '양호').length,

@@ -22,30 +22,37 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .slide-up { animation: slideUp 0.5s ease-out; }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes pulse-soft {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-      50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-    }
-    .pulse-active { animation: pulse-soft 2s ease-in-out infinite; }
     
-    /* Step Navigator - Premium Design */
-    .step-nav-container {
-      background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    /* Set Card Styles */
+    .set-card {
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .set-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .set-card.active {
+      border-color: #6366f1;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+    }
+    .set-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .set-body {
+      padding: 20px;
     }
     
-    /* Step Chip - Compact Text Style */
+    /* Step chip for each set */
     .step-chip {
       display: inline-flex;
       align-items: center;
       gap: 4px;
       padding: 6px 12px;
       border-radius: 8px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -58,7 +65,6 @@
     }
     .step-chip.pending:hover {
       background: #e2e8f0;
-      color: #475569;
     }
     .step-chip.active {
       background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -76,11 +82,10 @@
       margin-right: 2px;
     }
     
-    .table-container { max-height: 500px; overflow: auto; }
+    .table-container { max-height: 450px; overflow: auto; }
     .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
     .table-container::-webkit-scrollbar-track { background: #f8fafc; border-radius: 3px; }
     .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    .table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     
     .badge { 
       display: inline-flex; 
@@ -88,7 +93,7 @@
       gap: 4px;
       padding: 3px 10px; 
       border-radius: 6px; 
-      font-size: 12px; 
+      font-size: 11px; 
       font-weight: 500;
     }
     .badge-success { background: #dcfce7; color: #166534; }
@@ -102,68 +107,44 @@
       background: white;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 16px 20px;
-      transition: all 0.2s ease;
-    }
-    .stat-card:hover {
-      border-color: #cbd5e1;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-      transform: translateY(-1px);
-    }
-    
-    .ai-message-box {
-      background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
-      border: 1px solid #c7d2fe;
-      border-radius: 16px;
-    }
-    
-    .ai-report-box {
-      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-      border: 1px solid #d8b4fe;
-      border-radius: 16px;
+      padding: 14px 16px;
     }
     
     .btn-primary {
       background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 12px;
+      padding: 10px 20px;
+      border-radius: 10px;
       font-weight: 600;
+      font-size: 13px;
       transition: all 0.2s ease;
       box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
     }
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
     }
     .btn-primary:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      box-shadow: none;
     }
     
     .btn-secondary {
       background: #f1f5f9;
       color: #475569;
       border: 1px solid #e2e8f0;
-      padding: 12px 24px;
-      border-radius: 12px;
+      padding: 10px 20px;
+      border-radius: 10px;
       font-weight: 500;
-      transition: all 0.2s ease;
-    }
-    .btn-secondary:hover:not(:disabled) {
-      background: #e2e8f0;
-    }
-    .btn-secondary:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+      font-size: 13px;
     }
     
-    table th {
-      position: sticky;
-      top: 0;
-      z-index: 10;
+    table th { position: sticky; top: 0; z-index: 10; }
+    
+    .ai-report-box {
+      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+      border: 1px solid #d8b4fe;
+      border-radius: 12px;
     }
   </style>
 </head>
@@ -177,7 +158,7 @@
         </div>
         <div>
           <h1 class="text-lg font-bold text-slate-900 tracking-tight">밸브재 가격 분석 AI Agent</h1>
-          <p class="text-xs text-slate-400 font-medium">Valve Pricing Verification System</p>
+          <p class="text-xs text-slate-400 font-medium">Valve Pricing Analysis System</p>
         </div>
       </div>
       <div id="api-status" class="flex items-center gap-2 text-sm"></div>
@@ -185,105 +166,129 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-6 py-6">
-    <!-- Step Navigator - Compact Horizontal -->
-    <div class="step-nav-container rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-      <div class="flex items-center justify-between gap-3" id="step-nav">
-        <!-- Step Flow -->
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">준비</span>
-          <div class="step-chip pending" data-step="0">데이터 수집</div>
-          
-          <i class="ri-arrow-right-s-line text-slate-300"></i>
-          
-          <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">추천단가</span>
-          <div class="step-chip pending" data-step="a1">단가TBL</div>
-          <div class="step-chip pending" data-step="a2">발주실적</div>
-          
-          <i class="ri-arrow-right-s-line text-slate-300"></i>
-          
-          <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">견적검증</span>
-          <div class="step-chip pending" data-step="b1">계약비교</div>
-          <div class="step-chip pending" data-step="b2">실적비교</div>
-          <div class="step-chip pending" data-step="b3">적정성</div>
-          
-          <i class="ri-arrow-right-s-line text-slate-300"></i>
-          
-          <span class="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded">시황</span>
-          <div class="step-chip pending" data-step="c">시황분석</div>
-        </div>
-        
-        <!-- Progress -->
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <span class="text-xs font-bold text-indigo-600" id="progress-text">0%</span>
-          <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+    <!-- 3 Set Cards -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      
+      <!-- Set 1: PR 단가 추천 -->
+      <div class="set-card bg-white" id="set-1" onclick="selectSet(1)">
+        <div class="set-header bg-gradient-to-r from-indigo-50 to-blue-50">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+              <i class="ri-price-tag-3-line text-white text-sm"></i>
+            </div>
+            <h3 class="font-bold text-indigo-900">밸브재 PR 단가 추천</h3>
           </div>
+          <p class="text-xs text-indigo-600">구매요청 기반 적정단가 산출</p>
+        </div>
+        <div class="set-body">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="step-chip pending" data-set="1" data-step="pr">PR 접수</div>
+            <i class="ri-arrow-right-s-line text-slate-300"></i>
+            <div class="step-chip pending" data-set="1" data-step="a1">단가TBL</div>
+            <div class="step-chip pending" data-set="1" data-step="a2">발주실적</div>
+          </div>
+          <div id="set1-summary" class="text-xs text-slate-400">분석 시작 전</div>
+        </div>
+      </div>
+      
+      <!-- Set 2: 업체 견적 검증 -->
+      <div class="set-card bg-white" id="set-2" onclick="selectSet(2)">
+        <div class="set-header bg-gradient-to-r from-emerald-50 to-teal-50">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+              <i class="ri-file-search-line text-white text-sm"></i>
+            </div>
+            <h3 class="font-bold text-emerald-900">업체 견적 검증</h3>
+          </div>
+          <p class="text-xs text-emerald-600">협력사 견적가 적정성 분석</p>
+        </div>
+        <div class="set-body">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="step-chip pending" data-set="2" data-step="quote">견적 수신</div>
+            <i class="ri-arrow-right-s-line text-slate-300"></i>
+            <div class="step-chip pending" data-set="2" data-step="b1">계약비교</div>
+            <div class="step-chip pending" data-set="2" data-step="b2">실적비교</div>
+            <div class="step-chip pending" data-set="2" data-step="b3">적정성</div>
+          </div>
+          <div id="set2-summary" class="text-xs text-slate-400">분석 시작 전</div>
+        </div>
+      </div>
+      
+      <!-- Set 3: 시황 분석 -->
+      <div class="set-card bg-white" id="set-3" onclick="selectSet(3)">
+        <div class="set-header bg-gradient-to-r from-amber-50 to-orange-50">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+              <i class="ri-line-chart-line text-white text-sm"></i>
+            </div>
+            <h3 class="font-bold text-amber-900">실적가 기준 시황분석</h3>
+          </div>
+          <p class="text-xs text-amber-600">LME 원자재 시황 대비 분석</p>
+        </div>
+        <div class="set-body">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="step-chip pending" data-set="3" data-step="c">시황분석</div>
+          </div>
+          <div id="set3-summary" class="text-xs text-slate-400">분석 시작 전</div>
         </div>
       </div>
     </div>
 
-    <!-- Agent Message Area -->
-    <div class="ai-message-box p-6 mb-6" id="agent-message-area">
-      <div class="flex items-start gap-4">
-        <div class="w-11 h-11 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/25">
+    <!-- Agent Message & Results Area -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6" id="main-content">
+      <div class="flex items-start gap-4 mb-6">
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0">
           <i class="ri-robot-2-fill text-white text-lg"></i>
         </div>
-        <div class="flex-1 min-w-0">
+        <div class="flex-1">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-sm font-bold text-indigo-700">AI Agent</span>
             <span class="badge badge-purple text-[10px]" id="current-step-label">대기중</span>
           </div>
-          <div id="agent-message" class="text-slate-700 text-[15px] leading-relaxed">
-            안녕하세요! 밸브재 가격 분석을 시작하려면 <strong class="text-indigo-600">"분석 시작"</strong> 버튼을 클릭하세요.
-          </div>
-          <div id="agent-details" class="mt-4 space-y-4">
-            <!-- Details will be rendered here -->
+          <div id="agent-message" class="text-slate-700 text-[14px] leading-relaxed">
+            분석할 업무를 선택해주세요. 각 카드를 클릭하면 해당 분석을 시작합니다.
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Results Area -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 slide-up" id="results-area" style="display: none;">
-      <!-- Filter Bar -->
-      <div class="flex items-center justify-between gap-4 mb-4 flex-wrap" id="filter-bar">
-        <!-- Filters will be rendered here -->
-      </div>
       
-      <!-- Data Table -->
-      <div class="table-container border border-slate-200 rounded-xl overflow-hidden" id="data-table-container">
-        <table class="w-full text-sm" id="data-table">
-          <thead class="bg-slate-50">
-            <tr id="table-header"></tr>
-          </thead>
-          <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
+      <!-- Details Area -->
+      <div id="agent-details" class="mb-6"></div>
       
-      <!-- Pagination -->
-      <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100" id="pagination-area">
-        <div id="pagination-info" class="text-sm text-slate-500"></div>
-        <div id="pagination-controls" class="flex items-center gap-1"></div>
+      <!-- Results Table -->
+      <div id="results-area" style="display: none;">
+        <div class="flex items-center justify-between gap-4 mb-4" id="filter-bar"></div>
+        <div class="table-container border border-slate-200 rounded-xl overflow-hidden">
+          <table class="w-full text-sm" id="data-table">
+            <thead class="bg-slate-50">
+              <tr id="table-header"></tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+          <div id="pagination-info" class="text-sm text-slate-500"></div>
+          <div id="pagination-controls" class="flex items-center gap-1"></div>
+        </div>
       </div>
     </div>
 
     <!-- AI Report Area -->
-    <div class="ai-report-box p-6 mb-6 slide-up" id="ai-report-area" style="display: none;">
+    <div class="ai-report-box p-5 mb-6" id="ai-report-area" style="display: none;">
       <div class="flex items-start gap-4">
-        <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-          <i class="ri-sparkling-2-fill text-white"></i>
+        <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <i class="ri-sparkling-2-fill text-white text-sm"></i>
         </div>
-        <div class="flex-1 min-w-0">
-          <h3 class="font-bold text-violet-900 mb-3 flex items-center gap-2">
+        <div class="flex-1">
+          <h3 class="font-bold text-violet-900 mb-2 flex items-center gap-2 text-sm">
             <span>AI 분석 리포트</span>
             <span class="badge badge-purple text-[10px]"><i class="ri-robot-line"></i> Claude</span>
           </h3>
-          <div id="ai-report-text" class="text-slate-700 whitespace-pre-line leading-relaxed text-[15px]"></div>
+          <div id="ai-report-text" class="text-slate-700 whitespace-pre-line leading-relaxed text-[13px]"></div>
         </div>
       </div>
     </div>
 
-    <!-- Navigation Buttons -->
+    <!-- Navigation -->
     <div class="flex items-center justify-between">
       <button id="btn-prev" onclick="prevStep()" class="btn-secondary flex items-center gap-2" disabled>
         <i class="ri-arrow-left-line"></i> 이전
@@ -296,38 +301,42 @@
 
   <script>
     // State
-    let currentStep = -1;
+    let currentSet = 0;
+    let currentStepIndex = -1;
     let stepData = {};
-    let currentFilter = {};
     let currentPage = 1;
     const pageSize = 30;
 
-    // Step structure - 실제 업무명으로 표시 (아이콘 제거)
-    const steps = [
-      { id: '0', name: '데이터 수집', group: 'data' },
-      { id: 'a1', name: '단가TBL', group: 'a' },
-      { id: 'a2', name: '발주실적', group: 'a' },
-      { id: 'b1', name: '계약비교', group: 'b' },
-      { id: 'b2', name: '실적비교', group: 'b' },
-      { id: 'b3', name: '적정성', group: 'b' },
-      { id: 'c', name: '시황분석', group: 'c' }
-    ];
+    // Set definitions
+    const sets = {
+      1: {
+        name: 'PR 단가 추천',
+        steps: [
+          { id: 'pr', name: 'PR 접수', api: '/api/set1/pr' },
+          { id: 'a1', name: '단가TBL 매핑', api: '/api/step/a1' },
+          { id: 'a2', name: '발주실적 매핑', api: '/api/step/a2' }
+        ]
+      },
+      2: {
+        name: '견적 검증',
+        steps: [
+          { id: 'quote', name: '견적 수신', api: '/api/set2/quote' },
+          { id: 'b1', name: '계약비교', api: '/api/step/b1' },
+          { id: 'b2', name: '실적비교', api: '/api/step/b2' },
+          { id: 'b3', name: '적정성 판정', api: '/api/step/b3' }
+        ]
+      },
+      3: {
+        name: '시황 분석',
+        steps: [
+          { id: 'c', name: '시황분석', api: '/api/step/c' }
+        ]
+      }
+    };
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       checkAPIStatus();
-      
-      document.querySelectorAll('.step-chip').forEach(el => {
-        el.addEventListener('click', () => {
-          const stepId = el.dataset.step;
-          const stepIdx = steps.findIndex(s => s.id === stepId);
-          if (stepIdx <= currentStep && stepData[stepId]) {
-            currentStep = stepIdx;
-            updateStepNav();
-            renderStepResult(steps[stepIdx], stepData[stepId]);
-          }
-        });
-      });
     });
 
     async function checkAPIStatus() {
@@ -336,75 +345,102 @@
         const data = await res.json();
         const statusEl = document.getElementById('api-status');
         if (data.apiKey?.configured) {
-          statusEl.innerHTML = `
-            <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
-            <span class="text-emerald-600 text-xs font-semibold">API 연결됨</span>
-          `;
+          statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full"></span><span class="text-emerald-600 text-xs font-semibold">API 연결됨</span>`;
         } else {
-          statusEl.innerHTML = `
-            <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
-            <span class="text-amber-600 text-xs font-semibold">데모 모드</span>
-          `;
+          statusEl.innerHTML = `<span class="w-2 h-2 bg-amber-500 rounded-full"></span><span class="text-amber-600 text-xs font-semibold">데모 모드</span>`;
         }
-      } catch (e) {
-        console.error('Status check failed:', e);
-      }
+      } catch (e) { console.error('Status check failed:', e); }
     }
 
-    function updateStepNav() {
-      const progress = Math.round(((currentStep + 1) / steps.length) * 100);
-      document.getElementById('progress-text').textContent = `${progress}%`;
-      document.getElementById('progress-bar').style.width = `${progress}%`;
+    function selectSet(setNum) {
+      currentSet = setNum;
+      currentStepIndex = -1;
+      stepData = {};
       
-      steps.forEach((step, idx) => {
-        const el = document.querySelector(`.step-chip[data-step="${step.id}"]`);
-        if (!el) return;
+      // Update card styles
+      document.querySelectorAll('.set-card').forEach(card => {
+        card.classList.remove('active');
+      });
+      document.getElementById(`set-${setNum}`).classList.add('active');
+      
+      // Reset all chips
+      document.querySelectorAll('.step-chip').forEach(chip => {
+        chip.classList.remove('active', 'completed');
+        chip.classList.add('pending');
+      });
+      
+      // Update UI
+      const set = sets[setNum];
+      document.getElementById('agent-message').innerHTML = `<strong>${set.name}</strong> 분석을 시작합니다. "다음" 버튼을 클릭하세요.`;
+      document.getElementById('current-step-label').textContent = set.name;
+      document.getElementById('agent-details').innerHTML = '';
+      document.getElementById('results-area').style.display = 'none';
+      document.getElementById('ai-report-area').style.display = 'none';
+      
+      document.getElementById('btn-next').disabled = false;
+      document.getElementById('btn-next').innerHTML = '분석 시작 <i class="ri-arrow-right-line"></i>';
+      document.getElementById('btn-prev').disabled = true;
+    }
+
+    function updateStepChips() {
+      if (!currentSet) return;
+      const set = sets[currentSet];
+      
+      set.steps.forEach((step, idx) => {
+        const chip = document.querySelector(`.step-chip[data-set="${currentSet}"][data-step="${step.id}"]`);
+        if (!chip) return;
         
-        el.classList.remove('pending', 'active', 'completed');
-        if (idx < currentStep) {
-          el.classList.add('completed');
-        } else if (idx === currentStep) {
-          el.classList.add('active');
+        chip.classList.remove('pending', 'active', 'completed');
+        if (idx < currentStepIndex) {
+          chip.classList.add('completed');
+        } else if (idx === currentStepIndex) {
+          chip.classList.add('active');
         } else {
-          el.classList.add('pending');
+          chip.classList.add('pending');
         }
       });
     }
 
-    function setLoading(isLoading) {
-      const msgEl = document.getElementById('agent-message');
-      if (isLoading) {
-        msgEl.innerHTML = `
-          <span class="text-slate-600">분석 중</span>
-          <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
-          <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
-          <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
-        `;
-      }
-    }
-
     async function nextStep() {
-      currentStep++;
-      if (currentStep >= steps.length) {
-        currentStep = steps.length - 1;
+      if (!currentSet) {
+        alert('먼저 분석할 업무를 선택해주세요.');
         return;
       }
-
-      updateStepNav();
-      setLoading(true);
       
-      const step = steps[currentStep];
-      document.getElementById('current-step-label').textContent = `Step ${currentStep + 1}: ${step.name}`;
+      currentStepIndex++;
+      const set = sets[currentSet];
+      
+      if (currentStepIndex >= set.steps.length) {
+        currentStepIndex = set.steps.length - 1;
+        return;
+      }
+      
+      updateStepChips();
+      const step = set.steps[currentStepIndex];
+      
+      document.getElementById('current-step-label').textContent = `${set.name} > ${step.name}`;
+      document.getElementById('agent-message').innerHTML = `
+        <span class="text-slate-600">${step.name} 분석 중</span>
+        <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+        <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+        <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+      `;
       
       try {
-        await executeStep(step);
+        const res = await fetch(step.api);
+        const data = await res.json();
+        stepData[step.id] = data;
+        renderStepResult(step, data);
+        
+        // Update summary
+        updateSetSummary(currentSet, step, data);
       } catch (e) {
-        console.error('Step execution failed:', e);
-        document.getElementById('agent-message').innerHTML = `<span class="text-red-600">오류 발생: ${e.message}</span>`;
+        console.error('Step failed:', e);
+        document.getElementById('agent-message').innerHTML = `<span class="text-red-600">오류: ${e.message}</span>`;
       }
-
-      document.getElementById('btn-prev').disabled = currentStep === 0;
-      if (currentStep >= steps.length - 1) {
+      
+      document.getElementById('btn-prev').disabled = currentStepIndex === 0;
+      if (currentStepIndex >= set.steps.length - 1) {
         document.getElementById('btn-next').innerHTML = '완료 <i class="ri-check-line"></i>';
         document.getElementById('btn-next').disabled = true;
       } else {
@@ -413,26 +449,42 @@
     }
 
     function prevStep() {
-      if (currentStep > 0) {
-        currentStep--;
-        updateStepNav();
-        const step = steps[currentStep];
-        document.getElementById('current-step-label').textContent = `Step ${currentStep + 1}: ${step.name}`;
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        updateStepChips();
+        
+        const set = sets[currentSet];
+        const step = set.steps[currentStepIndex];
+        
+        document.getElementById('current-step-label').textContent = `${set.name} > ${step.name}`;
         if (stepData[step.id]) {
           renderStepResult(step, stepData[step.id]);
         }
-        document.getElementById('btn-prev').disabled = currentStep === 0;
+        
+        document.getElementById('btn-prev').disabled = currentStepIndex === 0;
         document.getElementById('btn-next').disabled = false;
         document.getElementById('btn-next').innerHTML = '다음 <i class="ri-arrow-right-line"></i>';
       }
     }
 
-    async function executeStep(step) {
-      const stepId = step.id;
-      const res = await fetch(`/api/step/${stepId}`);
-      const data = await res.json();
-      stepData[stepId] = data;
-      renderStepResult(step, data);
+    function updateSetSummary(setNum, step, data) {
+      const summaryEl = document.getElementById(`set${setNum}-summary`);
+      if (!summaryEl) return;
+      
+      if (data.summary) {
+        const s = data.summary;
+        if (setNum === 1) {
+          if (step.id === 'pr') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">PR ${s.total?.toLocaleString() || 0}건 접수</span>`;
+          else if (step.id === 'a1') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">매핑 ${s.matchRate || '0%'} (타입+사이즈: ${s.타입사이즈일치 || 0}, 타입: ${s.타입일치 || 0})</span>`;
+          else if (step.id === 'a2') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">동일 ${s.동일내역 || 0} / 유사 ${s.유사타입 || 0}</span>`;
+        } else if (setNum === 2) {
+          if (step.id === 'quote') summaryEl.innerHTML = `<span class="text-emerald-600 font-medium">견적 ${s.total?.toLocaleString() || 0}건</span>`;
+          else if (step.id === 'b1') summaryEl.innerHTML = `<span class="text-emerald-600 font-medium">매핑 ${s.matchRate || '0%'}</span>`;
+          else if (step.id === 'b3') summaryEl.innerHTML = `<span class="text-emerald-600 font-medium">우수 ${s.우수||0} / 보통 ${s.보통||0} / 부적절 ${s.부적절||0}</span>`;
+        } else if (setNum === 3) {
+          summaryEl.innerHTML = `<span class="text-amber-600 font-medium">양호 ${s.양호||0} / 적정 ${s.적정||0} / 주의 ${s.주의||0}</span>`;
+        }
+      }
     }
 
     function renderStepResult(step, data) {
@@ -440,137 +492,234 @@
       const detailsEl = document.getElementById('agent-details');
       const resultsArea = document.getElementById('results-area');
       const aiReportArea = document.getElementById('ai-report-area');
-
+      
       msgEl.innerHTML = `<span class="fade-in">${data.message || data.title || step.name}</span>`;
       aiReportArea.style.display = 'none';
-
-      if (step.id === '0') {
-        renderStep0Details(data, detailsEl);
-        renderStep0Table(data);
+      
+      // Render based on step
+      if (step.id === 'pr' || step.id === 'quote') {
+        renderDataStep(data, detailsEl);
+      } else if (step.id === 'a1') {
+        renderA1Details(data, detailsEl);
+      } else if (step.id === 'a2') {
+        renderA2Details(data, detailsEl);
+      } else if (step.id === 'b1') {
+        renderB1Details(data, detailsEl);
+      } else if (step.id === 'b2') {
+        renderB2Details(data, detailsEl);
       } else if (step.id === 'b3') {
         renderB3Details(data, detailsEl);
-        renderDataTable(data.data, getFiltersForStep(step.id));
-        // AI 코멘트가 포함된 데이터 표시
-        if (data.data && data.data.some(d => d.AI코멘트)) {
+        if (data.data?.some(d => d.AI코멘트)) {
           aiReportArea.style.display = 'block';
           document.getElementById('ai-report-text').innerHTML = formatAIComments(data.data);
         }
       } else if (step.id === 'c') {
-        // Step C: Agent가 시황 정보를 가져오는 것처럼 표시
-        msgEl.innerHTML = `<span class="fade-in">🌐 LME 원자재 시황 데이터를 수집하고 분석 중입니다...</span>`;
-        setTimeout(() => {
-          msgEl.innerHTML = `<span class="fade-in">✅ LME 시황 데이터 수집 완료! 발주가격 트렌드를 분석합니다.</span>`;
-        }, 800);
+        msgEl.innerHTML = `<span class="fade-in">🌐 LME 원자재 시황 데이터를 수집하고 분석합니다...</span>`;
         renderStepCDetails(data, detailsEl);
-        renderDataTable(data.trendResults, getFiltersForStep(step.id));
-        // AI 리포트 통합
         if (data.aiReport) {
           aiReportArea.style.display = 'block';
           document.getElementById('ai-report-text').textContent = data.aiReport;
         }
+      }
+      
+      // Render table if data exists
+      if (data.data && data.data.length > 0) {
+        renderDataTable(data.data, getFiltersForStep(step.id));
+      } else if (data.trendResults) {
+        renderDataTable(data.trendResults, getFiltersForStep(step.id));
       } else {
-        renderGenericDetails(data, detailsEl);
-        if (data.data) {
-          renderDataTable(data.data, getFiltersForStep(step.id));
-        } else {
-          resultsArea.style.display = 'none';
-        }
+        resultsArea.style.display = 'none';
       }
     }
 
-    function renderStep0Details(data, container) {
-      const summary = data.summary;
+    function renderDataStep(data, container) {
+      const s = data.summary || {};
+      const prLabel = data.dataType === 'pr' ? 'PR 접수 건수' : '견적 건수';
       container.innerHTML = `
         <div class="grid grid-cols-3 gap-3 fade-in">
           <div class="stat-card">
-            <div class="flex items-center gap-2 mb-2">
-              <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                <i class="ri-price-tag-3-line text-indigo-600"></i>
-              </div>
-            </div>
-            <div class="text-2xl font-bold text-slate-800">${summary.priceTable.count.toLocaleString()}</div>
-            <div class="text-xs text-slate-400 mt-1">단가테이블</div>
-            <div class="text-[10px] text-slate-300">${summary.priceTable.uniqueValveTypes} 밸브타입</div>
+            <div class="text-2xl font-bold text-slate-800">${(s.total || 0).toLocaleString()}</div>
+            <div class="text-xs text-slate-400 mt-1">${prLabel}</div>
           </div>
           <div class="stat-card">
-            <div class="flex items-center gap-2 mb-2">
-              <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <i class="ri-file-list-3-line text-emerald-600"></i>
-              </div>
-            </div>
-            <div class="text-2xl font-bold text-slate-800">${summary.vendorQuotes.count.toLocaleString()}</div>
-            <div class="text-xs text-slate-400 mt-1">협력사 견적</div>
-            <div class="text-[10px] text-slate-300">${summary.vendorQuotes.mappedCount} 매핑완료</div>
+            <div class="text-2xl font-bold text-indigo-600">${s.columns || 0}</div>
+            <div class="text-xs text-slate-400 mt-1">데이터 컬럼</div>
           </div>
           <div class="stat-card">
-            <div class="flex items-center gap-2 mb-2">
-              <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                <i class="ri-history-line text-violet-600"></i>
-              </div>
-            </div>
-            <div class="text-2xl font-bold text-slate-800">${summary.performance.count.toLocaleString()}</div>
-            <div class="text-xs text-slate-400 mt-1">발주 실적</div>
-            <div class="text-[10px] text-slate-300">${summary.performance.validValveTypes.toLocaleString()} 유효건</div>
+            <div class="text-2xl font-bold text-emerald-600">${(s.uniqueTypes || 0).toLocaleString()}</div>
+            <div class="text-xs text-slate-400 mt-1">밸브 타입</div>
           </div>
         </div>
       `;
     }
 
-    function renderStep0Table(data) {
-      const resultsArea = document.getElementById('results-area');
-      resultsArea.style.display = 'block';
-      
-      const filterBar = document.getElementById('filter-bar');
-      filterBar.innerHTML = `
-        <div class="flex gap-2">
-          <button onclick="showDataTab('priceTable')" class="tab-btn px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition" data-tab="priceTable">
-            단가테이블
-          </button>
-          <button onclick="showDataTab('vendorQuotes')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="vendorQuotes">
-            협력사 견적
-          </button>
-          <button onclick="showDataTab('performance')" class="tab-btn px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition" data-tab="performance">
-            발주 실적
-          </button>
+    function renderA1Details(data, container) {
+      const s = data.summary || {};
+      container.innerHTML = `
+        <div class="space-y-4 fade-in">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">단가TBL 매핑 기준</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              ${(data.rules || []).map(r => `
+                <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
+                  <i class="ri-checkbox-circle-line text-indigo-500 mt-0.5"></i>
+                  <span>${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-5 gap-3">
+            <div class="stat-card text-center">
+              <div class="text-2xl font-bold text-slate-800">${s.total || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">전체</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${s.matched || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">매핑 성공</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-indigo-500">
+              <div class="text-xl font-bold text-indigo-600">${s.타입사이즈일치 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">타입+사이즈일치</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-xl font-bold text-amber-600">${s.타입일치 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">타입일치</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${s.unmatched || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">매핑 실패</div>
+            </div>
+          </div>
         </div>
-        <div class="text-xs text-slate-400">클릭하여 상세 조회</div>
       `;
-      
-      renderDataTable(data.data.priceTable, []);
     }
 
-    async function showDataTab(type) {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-indigo-100', 'text-indigo-700');
-        btn.classList.add('bg-slate-100', 'text-slate-600');
-      });
-      const activeBtn = document.querySelector(`.tab-btn[data-tab="${type}"]`);
-      if (activeBtn) {
-        activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
-        activeBtn.classList.add('bg-indigo-100', 'text-indigo-700');
-      }
-      
-      const step0Data = stepData['0'];
-      if (step0Data?.data?.[type]) {
-        renderDataTable(step0Data.data[type], []);
-      } else {
-        const res = await fetch(`/api/data/${type}?limit=100`);
-        const data = await res.json();
-        renderDataTable(data.data, []);
-      }
+    function renderA2Details(data, container) {
+      const s = data.summary || {};
+      container.innerHTML = `
+        <div class="space-y-4 fade-in">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">발주실적 매핑 기준</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              ${(data.rules || []).map(r => `
+                <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
+                  <i class="ri-checkbox-circle-line text-indigo-500 mt-0.5"></i>
+                  <span>${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <div class="stat-card text-center">
+              <div class="text-2xl font-bold text-slate-800">${s.total || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">전체</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${s.동일내역 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">동일내역</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-2xl font-bold text-amber-600">${s.유사타입 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">유사타입</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${s.미매핑 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">미매핑</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderB1Details(data, container) {
+      const s = data.summary || {};
+      container.innerHTML = `
+        <div class="space-y-4 fade-in">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">계약단가 비교 기준</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              ${(data.rules || []).map(r => `
+                <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
+                  <i class="ri-checkbox-circle-line text-emerald-500 mt-0.5"></i>
+                  <span>${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-5 gap-3">
+            <div class="stat-card text-center">
+              <div class="text-2xl font-bold text-slate-800">${s.total || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">전체 견적</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${s.matched || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">매핑 성공</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-indigo-500">
+              <div class="text-xl font-bold text-indigo-600">${s.타입사이즈일치 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">타입+사이즈일치</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-xl font-bold text-amber-600">${s.타입일치 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">타입일치</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${s.unmatched || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">매핑 실패</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderB2Details(data, container) {
+      const s = data.summary || {};
+      container.innerHTML = `
+        <div class="space-y-4 fade-in">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">발주실적 비교 기준</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              ${(data.rules || []).map(r => `
+                <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
+                  <i class="ri-checkbox-circle-line text-emerald-500 mt-0.5"></i>
+                  <span>${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <div class="stat-card text-center">
+              <div class="text-2xl font-bold text-slate-800">${s.total || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">전체</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${s.동일내역 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">동일내역</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-2xl font-bold text-amber-600">${s.유사타입 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">유사타입</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${s.미매핑 || 0}</div>
+              <div class="text-[10px] text-slate-400 mt-1">미매핑</div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function renderB3Details(data, container) {
-      const summary = data.summary || {};
-      const total = summary.total || 0;
+      const s = data.summary || {};
+      const total = s.total || 1;
       container.innerHTML = `
         <div class="space-y-4 fade-in">
           <div class="bg-slate-50 rounded-xl p-4">
             <h4 class="font-semibold text-slate-700 mb-3 text-sm">적정성 판정 기준</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+            <div class="grid grid-cols-3 gap-2 text-xs">
               ${(data.rules || []).map(r => `
                 <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
-                  <i class="ri-checkbox-circle-line text-indigo-500 mt-0.5 flex-shrink-0"></i>
+                  <i class="ri-checkbox-circle-line text-emerald-500 mt-0.5"></i>
                   <span>${r}</span>
                 </div>
               `).join('')}
@@ -578,24 +727,24 @@
           </div>
           <div class="grid grid-cols-4 gap-3">
             <div class="stat-card text-center border-t-2 border-emerald-500">
-              <div class="text-2xl font-bold text-emerald-600">${summary.우수 || 0}</div>
+              <div class="text-2xl font-bold text-emerald-600">${s.우수 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">우수</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.우수||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.우수||0)/total*100)}%</div>
             </div>
             <div class="stat-card text-center border-t-2 border-amber-500">
-              <div class="text-2xl font-bold text-amber-600">${summary.보통 || 0}</div>
+              <div class="text-2xl font-bold text-amber-600">${s.보통 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">보통</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.보통||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.보통||0)/total*100)}%</div>
             </div>
             <div class="stat-card text-center border-t-2 border-red-500">
-              <div class="text-2xl font-bold text-red-600">${summary.부적절 || 0}</div>
+              <div class="text-2xl font-bold text-red-600">${s.부적절 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">부적절</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.부적절||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.부적절||0)/total*100)}%</div>
             </div>
             <div class="stat-card text-center border-t-2 border-slate-400">
-              <div class="text-2xl font-bold text-slate-600">${summary.판단불가 || 0}</div>
+              <div class="text-2xl font-bold text-slate-600">${s.판단불가 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">판단불가</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.판단불가||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.판단불가||0)/total*100)}%</div>
             </div>
           </div>
         </div>
@@ -603,94 +752,88 @@
     }
 
     function renderStepCDetails(data, container) {
-      const summary = data.summary || {};
-      const total = (summary.양호||0) + (summary.적정||0) + (summary.주의||0);
+      const s = data.summary || {};
+      const target = data.targetInfo || {};
+      const total = (s.양호||0) + (s.적정||0) + (s.주의||0) || 1;
       container.innerHTML = `
         <div class="space-y-4 fade-in">
+          <div class="bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <h4 class="font-semibold text-amber-800 mb-2 text-sm">📊 분석 대상 밸브</h4>
+            <div class="text-xs text-amber-700">
+              <span class="font-bold">${target.valveType || 'VGBARR240AT'}</span> (Bronze Casting, Cu+Sn 합금)
+              <br><span class="text-amber-600">${target.description || 'LOCK 옵션 제외, TR 타입만'}</span>
+              <br><span class="font-medium">분석 대상: ${(s.targetCount || 0).toLocaleString()}건</span>
+            </div>
+          </div>
           <div class="bg-slate-50 rounded-xl p-4">
-            <h4 class="font-semibold text-slate-700 mb-3 text-sm">시황 대비 분석 기준</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+            <h4 class="font-semibold text-slate-700 mb-3 text-sm">시황 대비 판정 기준</h4>
+            <div class="grid grid-cols-3 gap-2 text-xs">
               <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-slate-200">
                 <span class="badge badge-success">양호</span>
-                <span class="text-slate-600">시황↑ 발주가 유지/하락</span>
+                <span class="text-slate-600">시황↑ 단가 유지/하락</span>
               </div>
               <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-slate-200">
                 <span class="badge badge-warning">적정</span>
-                <span class="text-slate-600">시황과 발주가 동일방향</span>
+                <span class="text-slate-600">시황과 단가 동일방향</span>
               </div>
               <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-slate-200">
                 <span class="badge badge-danger">주의</span>
-                <span class="text-slate-600">시황↓ 발주가 상승</span>
+                <span class="text-slate-600">시황↓ 단가 상승</span>
               </div>
             </div>
           </div>
+          ${data.yearSummary ? `
+          <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <h4 class="font-semibold text-blue-800 mb-2 text-sm">📈 2025년 전체 요약</h4>
+            <div class="grid grid-cols-4 gap-3 text-center">
+              <div>
+                <div class="text-lg font-bold text-blue-700">${data.yearSummary.avgPrice?.toLocaleString() || '-'}</div>
+                <div class="text-[10px] text-blue-500">평균단가</div>
+              </div>
+              <div>
+                <div class="text-lg font-bold text-blue-700">${data.yearSummary.totalOrders?.toLocaleString() || '-'}</div>
+                <div class="text-[10px] text-blue-500">총 발주건</div>
+              </div>
+              <div>
+                <div class="text-lg font-bold ${data.yearSummary.priceChange >= 0 ? 'text-red-600' : 'text-emerald-600'}">${data.yearSummary.priceChange >= 0 ? '+' : ''}${data.yearSummary.priceChange?.toFixed(1) || 0}%</div>
+                <div class="text-[10px] text-blue-500">단가변동</div>
+              </div>
+              <div>
+                <div class="text-lg font-bold ${data.yearSummary.marketChange >= 0 ? 'text-red-600' : 'text-emerald-600'}">${data.yearSummary.marketChange >= 0 ? '+' : ''}${data.yearSummary.marketChange?.toFixed(1) || 0}%</div>
+                <div class="text-[10px] text-blue-500">시황변동</div>
+              </div>
+            </div>
+          </div>
+          ` : ''}
           <div class="grid grid-cols-4 gap-3">
             <div class="stat-card text-center">
-              <div class="text-2xl font-bold text-slate-800">${summary.targetCount?.toLocaleString() || 0}</div>
+              <div class="text-2xl font-bold text-slate-800">${(s.targetCount || 0).toLocaleString()}</div>
               <div class="text-[10px] text-slate-400 mt-1">분석 대상</div>
             </div>
             <div class="stat-card text-center border-t-2 border-emerald-500">
-              <div class="text-2xl font-bold text-emerald-600">${summary.양호 || 0}</div>
+              <div class="text-2xl font-bold text-emerald-600">${s.양호 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">양호</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.양호||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.양호||0)/total*100)}%</div>
             </div>
             <div class="stat-card text-center border-t-2 border-amber-500">
-              <div class="text-2xl font-bold text-amber-600">${summary.적정 || 0}</div>
+              <div class="text-2xl font-bold text-amber-600">${s.적정 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">적정</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.적정||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.적정||0)/total*100)}%</div>
             </div>
             <div class="stat-card text-center border-t-2 border-red-500">
-              <div class="text-2xl font-bold text-red-600">${summary.주의 || 0}</div>
+              <div class="text-2xl font-bold text-red-600">${s.주의 || 0}</div>
               <div class="text-[10px] text-slate-400 mt-1">주의</div>
-              <div class="text-[9px] text-slate-300">${total ? Math.round((summary.주의||0)/total*100) : 0}%</div>
+              <div class="text-[9px] text-slate-300">${Math.round((s.주의||0)/total*100)}%</div>
             </div>
           </div>
         </div>
       `;
     }
 
-    function renderGenericDetails(data, container) {
-      let summaryHtml = '';
-      if (data.summary) {
-        const entries = Object.entries(data.summary);
-        summaryHtml = `
-          <div class="grid grid-cols-2 md:grid-cols-${Math.min(entries.length, 4)} gap-3 mb-4">
-            ${entries.map(([key, val]) => `
-              <div class="stat-card text-center">
-                <div class="text-xl font-bold ${getValueColor(key, val)}">${typeof val === 'number' ? val.toLocaleString() : val}</div>
-                <div class="text-[10px] text-slate-400 mt-1">${key}</div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      let rulesHtml = '';
-      if (data.rules && data.rules.length > 0) {
-        rulesHtml = `
-          <div class="bg-slate-50 rounded-xl p-4 mb-4">
-            <h4 class="font-semibold text-slate-700 mb-3 text-sm">산출/검증 기준</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-              ${data.rules.map(r => `
-                <div class="flex items-start gap-2 text-xs text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
-                  <i class="ri-checkbox-circle-line text-indigo-500 mt-0.5 flex-shrink-0"></i>
-                  <span>${r}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      }
-
-      container.innerHTML = `<div class="fade-in">${rulesHtml}${summaryHtml}</div>`;
-    }
-
     function formatAIComments(data) {
       if (!data || data.length === 0) return '분석 결과가 없습니다.';
-      
       const withComments = data.filter(c => c.AI코멘트);
       if (withComments.length === 0) return '분석 결과가 없습니다.';
-      
       return withComments.slice(0, 5).map((c, i) => `
         <div class="mb-4 pb-4 ${i < 4 ? 'border-b border-violet-100' : ''}">
           <div class="flex items-center gap-2 mb-2">
@@ -702,25 +845,20 @@
       `).join('');
     }
 
-    function getValueColor(key, val) {
-      if (key === '우수' || key === '양호' || key === 'matched' || key === '동일내역') return 'text-emerald-600';
-      if (key === '부적절' || key === '주의' || key === 'unmatched' || key === '미매핑') return 'text-red-600';
-      if (key === '보통' || key === '적정' || key === '유사타입') return 'text-amber-600';
-      return 'text-slate-800';
-    }
-
     function getFiltersForStep(stepId) {
-      const filterConfigs = {
-        'a1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }],
+      const configs = {
+        'a1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+사이즈일치', '타입일치'] }],
         'a2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
-        'b1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }],
+        'b1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+사이즈일치', '타입일치'] }],
         'b2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
         'b3': [{ key: '적정성', options: ['전체', '우수', '보통', '부적절', '판단불가'] }],
         'c': [{ key: '적정성', options: ['전체', '양호', '적정', '주의'] }]
       };
-      return filterConfigs[stepId] || [];
+      return configs[stepId] || [];
     }
 
+    let currentFilter = {};
+    
     function renderDataTable(data, filters) {
       if (!data || data.length === 0) {
         document.getElementById('results-area').style.display = 'none';
@@ -737,7 +875,7 @@
             ${filters.map(f => `
               <div class="flex items-center gap-2">
                 <label class="text-xs font-semibold text-slate-500">${f.key}</label>
-                <select onchange="applyFilter('${f.key}', this.value)" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <select onchange="applyFilter('${f.key}', this.value)" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-white">
                   ${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
                 </select>
               </div>
@@ -745,6 +883,8 @@
           </div>
           <div class="text-xs text-slate-400 font-medium" id="filter-count"></div>
         `;
+      } else {
+        filterBar.innerHTML = '';
       }
 
       currentFilter = {};
@@ -760,7 +900,8 @@
       }
       currentPage = 1;
       
-      const step = steps[currentStep];
+      const set = sets[currentSet];
+      const step = set.steps[currentStepIndex];
       const data = stepData[step.id]?.data || stepData[step.id]?.trendResults || [];
       renderTableData(data);
     }
@@ -768,28 +909,27 @@
     function renderTableData(allData) {
       let filteredData = allData;
       for (const [key, value] of Object.entries(currentFilter)) {
-        filteredData = filteredData.filter(row => row[key] === value || row['적정성'] === value);
+        filteredData = filteredData.filter(row => row[key] === value);
       }
 
       const filterCount = document.getElementById('filter-count');
-      if (filterCount) {
-        filterCount.textContent = `${filteredData.length.toLocaleString()}건`;
-      }
+      if (filterCount) filterCount.textContent = `${filteredData.length.toLocaleString()}건`;
 
       const totalPages = Math.ceil(filteredData.length / pageSize);
       const startIdx = (currentPage - 1) * pageSize;
       const pageData = filteredData.slice(startIdx, startIdx + pageSize);
 
-      const columns = pageData.length > 0 ? Object.keys(pageData[0]).filter(k => k !== 'AI코멘트') : [];
-      const headerEl = document.getElementById('table-header');
-      headerEl.innerHTML = columns.map(col => 
-        `<th class="px-3 py-3 text-left text-[11px] font-bold text-slate-500 bg-slate-50 whitespace-nowrap uppercase tracking-wider">${col}</th>`
+      // 숨길 컬럼 목록
+      const hideColumns = ['AI코멘트', 'vtype_key', '옵션상세'];
+      const columns = pageData.length > 0 ? Object.keys(pageData[0]).filter(k => !hideColumns.includes(k)) : [];
+      
+      document.getElementById('table-header').innerHTML = columns.map(col => 
+        `<th class="px-3 py-2.5 text-left text-[10px] font-bold text-slate-500 bg-slate-50 whitespace-nowrap uppercase tracking-wider">${col}</th>`
       ).join('');
 
-      const bodyEl = document.getElementById('table-body');
-      bodyEl.innerHTML = pageData.map((row, idx) => `
+      document.getElementById('table-body').innerHTML = pageData.map(row => `
         <tr class="hover:bg-indigo-50/50 transition-colors">
-          ${columns.map(col => `<td class="px-3 py-2.5 text-xs text-slate-700 whitespace-nowrap">${formatCellValue(col, row[col])}</td>`).join('')}
+          ${columns.map(col => `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${formatCellValue(col, row[col])}</td>`).join('')}
         </tr>
       `).join('');
 
@@ -806,16 +946,15 @@
             pages.push('...');
           }
         }
-        
         paginationControls.innerHTML = `
-          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-xs">
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 flex items-center justify-center text-xs">
             <i class="ri-arrow-left-s-line"></i>
           </button>
           ${pages.map(p => p === '...' 
             ? '<span class="px-1 text-slate-400 text-xs">...</span>'
-            : `<button onclick="changePage(${p})" class="w-8 h-8 rounded-lg text-xs font-semibold ${p === currentPage ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-100'}">${p}</button>`
+            : `<button onclick="changePage(${p})" class="w-7 h-7 rounded-lg text-xs font-semibold ${p === currentPage ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-100'}">${p}</button>`
           ).join('')}
-          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-xs">
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 flex items-center justify-center text-xs">
             <i class="ri-arrow-right-s-line"></i>
           </button>
         `;
@@ -826,7 +965,8 @@
 
     function changePage(page) {
       currentPage = page;
-      const step = steps[currentStep];
+      const set = sets[currentSet];
+      const step = set.steps[currentStepIndex];
       const data = stepData[step.id]?.data || stepData[step.id]?.trendResults || [];
       renderTableData(data);
     }
@@ -840,8 +980,8 @@
           : `<span class="badge badge-danger text-[10px]"><i class="ri-close-line"></i> ${val}</span>`;
       }
       if (col === '매핑유형') {
-        if (val === '동일내역') return `<span class="badge badge-success text-[10px]">${val}</span>`;
-        if (val === '유사타입') return `<span class="badge badge-warning text-[10px]">${val}</span>`;
+        if (val === '동일내역' || val === '타입+사이즈일치') return `<span class="badge badge-success text-[10px]">${val}</span>`;
+        if (val === '유사타입' || val === '타입일치') return `<span class="badge badge-warning text-[10px]">${val}</span>`;
         return `<span class="badge badge-danger text-[10px]">${val}</span>`;
       }
       if (col === '적정성') {
@@ -850,11 +990,25 @@
         if (val === '부적절' || val === '주의') return `<span class="badge badge-danger text-[10px]">${val}</span>`;
         return `<span class="badge badge-gray text-[10px]">${val}</span>`;
       }
+      
+      // 차이 컬럼 처리 (퍼센티지 문자열)
+      if (col === '차이' || col === '차이율') {
+        if (typeof val === 'string' && val.includes('%')) {
+          const isPositive = val.startsWith('+');
+          const isNegative = val.startsWith('-');
+          const color = isPositive ? 'text-red-600' : isNegative ? 'text-emerald-600' : 'text-slate-600';
+          return `<span class="${color} font-semibold">${val}</span>`;
+        }
+        if (typeof val === 'number') {
+          const color = val > 0 ? 'text-red-600' : val < 0 ? 'text-emerald-600' : 'text-slate-600';
+          return `<span class="${color} font-semibold">${val > 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+        }
+      }
 
       if (typeof val === 'number') {
         if (col.includes('변동') || col.includes('%')) {
           const color = val > 0 ? 'text-red-600' : val < 0 ? 'text-emerald-600' : 'text-slate-600';
-          return `<span class="${color} font-semibold">${val > 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+          return `<span class="${color} font-semibold">${val > 0 ? '+' : ''}${typeof val === 'number' ? val.toFixed(1) : val}%</span>`;
         }
         if (col.includes('이익') || col.includes('손해')) {
           const color = val > 0 ? 'text-emerald-600' : val < 0 ? 'text-red-600' : 'text-slate-600';
@@ -866,8 +1020,8 @@
         return val.toLocaleString();
       }
 
-      if (typeof val === 'string' && val.length > 35) {
-        return `<span title="${val}" class="cursor-help">${val.substring(0, 32)}...</span>`;
+      if (typeof val === 'string' && val.length > 30) {
+        return `<span title="${val}" class="cursor-help">${val.substring(0, 28)}...</span>`;
       }
 
       return val;
