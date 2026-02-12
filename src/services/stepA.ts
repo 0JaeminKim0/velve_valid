@@ -25,7 +25,8 @@ export interface StepA1Result {
   매핑상태: string;
   매핑유형: string;  // 업무용어: 타입+자재내역일치, 타입일치
   본체가: number;
-  옵션가: number;
+  '옵션가(NP)': number;
+  '옵션가(OP)': number;
   합계: number;
   수량: number;
   추천총액: number;
@@ -196,7 +197,8 @@ export function executeStepA1(): {
       매핑상태: '실패',
       매핑유형: '-',
       본체가: 0,
-      옵션가: 0,
+      '옵션가(NP)': 0,
+      '옵션가(OP)': 0,
       합계: 0,
       수량: qty,
       추천총액: 0,
@@ -222,13 +224,19 @@ export function executeStepA1(): {
 
       // 옵션 계산
       const { total: optTotal, detail: optDetail } = calcOptionPrice(pt, descOpts);
+      
+      // NP와 OP 값 추출
+      const npValue = pt['N/P-변환'] || 0;
+      const opValue = pt['O-P-변환'] || 0;
+      
       const unitSum = unitBody2 + optTotal;
 
       result.매핑상태 = '성공';
       result.매핑유형 = mappingType;
       result.계약업체 = pt.업체명 || '';
       result.본체가 = Math.round(unitBody2);
-      result.옵션가 = Math.round(optTotal);
+      result['옵션가(NP)'] = Math.round(npValue);
+      result['옵션가(OP)'] = Math.round(opValue);
       result.합계 = Math.round(unitSum);
       result.추천총액 = Math.round(unitSum * qty);
       result.옵션상세 = Object.keys(optDetail).length > 0 
@@ -257,7 +265,8 @@ export function executeStepA1(): {
       '1순위: 밸브타입+자재내역 일치 (타입+자재내역일치)',
       '2순위: 밸브타입만 일치 (타입일치)',
       '본체가 = 단가TBL BODY2-변환 / 수량',
-      '옵션가 = 내역에서 추출한 옵션 합산'
+      '옵션가(NP) = N/P-변환 값',
+      '옵션가(OP) = O-P-변환 값'
     ]
   };
 }

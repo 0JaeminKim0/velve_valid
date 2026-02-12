@@ -51,14 +51,15 @@ export interface StepB1Result {
   수량: number;
   견적가: number;
   본체가: number;
-  옵션가: number;
+  '옵션가(NP)': number;
+  '옵션가(OP)': number;
   계약총액: number;
   차이: string;
   원인: string;  // 차이 발생 원인 (간결하게)
 }
 
 // Step B-1: 견적 vs 계약단가 비교
-// 컬럼순서: 견적가 | 본체가 | 옵션가 | 계약 총액 | 차이
+// 컬럼순서: 견적가 | 본체가 | 옵션가(NP) | 옵션가(OP) | 계약 총액 | 차이
 export function executeStepB1(): {
   results: StepB1Result[];
   summary: {
@@ -105,7 +106,8 @@ export function executeStepB1(): {
       수량: qty,
       견적가: vr['견적가-변환'],
       본체가: 0,
-      옵션가: 0,
+      '옵션가(NP)': 0,
+      '옵션가(OP)': 0,
       계약총액: 0,
       차이: '-',
       원인: '-'
@@ -135,6 +137,10 @@ export function executeStepB1(): {
         vr.상세사양
       );
       
+      // NP와 OP 값 추출
+      const npValue = (pt['N/P-변환'] || 0) * qty;
+      const opValue = (pt['O-P-변환'] || 0) * qty;
+      
       // 본체가 = 바디단가-변환 × 견적중량 (수량 적용)
       const bodyTotal = bodyUnitPrice * quoteWeight * qty;
       const optionTotal = optTotal * qty;
@@ -143,7 +149,8 @@ export function executeStepB1(): {
       result.매핑상태 = '성공';
       result.매핑유형 = mappingType;
       result.본체가 = Math.round(bodyTotal);
-      result.옵션가 = Math.round(optionTotal);
+      result['옵션가(NP)'] = Math.round(npValue);
+      result['옵션가(OP)'] = Math.round(opValue);
       result.계약총액 = Math.round(contractTotal);
       
       // 차이 = (견적가 - 계약총액) / 계약총액 * 100 퍼센티지로 표기
@@ -241,6 +248,8 @@ export function executeStepB1(): {
       '1순위: 밸브타입+자재내역 일치 (타입+자재내역일치)',
       '2순위: 밸브타입만 일치 (타입일치)',
       '본체가 = 바디단가-변환(kg당) × 견적중량',
+      '옵션가(NP) = N/P-변환 값',
+      '옵션가(OP) = O-P-변환 값',
       '차이 = (견적가-계약총액)/계약총액 × 100%'
     ]
   };
