@@ -824,6 +824,53 @@
             </div>
           </div>
           ` : ''}
+          ${data.vendorSummaries && data.vendorSummaries.length > 0 ? `
+          <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
+            <h4 class="font-semibold text-indigo-800 mb-3 text-sm">🏢 2025년 업체별 요약</h4>
+            <div class="space-y-3">
+              ${data.vendorSummaries.map((vs, idx) => `
+                <div class="bg-white rounded-lg p-3 border border-indigo-100">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold text-indigo-700 text-sm">${idx + 1}. ${vs.vendor}</span>
+                    <span class="text-[10px] text-slate-400">${vs.period || '-'}</span>
+                  </div>
+                  <div class="grid grid-cols-6 gap-2 text-center text-xs">
+                    <div>
+                      <div class="font-bold text-slate-800">${(vs.avgPrice || 0).toLocaleString()}</div>
+                      <div class="text-[9px] text-slate-400">평균단가</div>
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-800">${(vs.totalOrders || 0).toLocaleString()}</div>
+                      <div class="text-[9px] text-slate-400">발주건수</div>
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-800">${(vs.totalAmount || 0).toLocaleString()}</div>
+                      <div class="text-[9px] text-slate-400">발주금액</div>
+                    </div>
+                    <div>
+                      <div class="font-bold ${vs.priceChange > 0 ? 'text-red-600' : vs.priceChange < 0 ? 'text-emerald-600' : 'text-slate-600'}">
+                        ${vs.priceChange > 0 ? '+' : ''}${vs.priceChange || 0}%
+                      </div>
+                      <div class="text-[9px] text-slate-400">단가변동</div>
+                    </div>
+                    <div>
+                      <div class="font-bold ${vs.marketChange > 0 ? 'text-red-600' : vs.marketChange < 0 ? 'text-emerald-600' : 'text-slate-600'}">
+                        ${vs.marketChange > 0 ? '+' : ''}${vs.marketChange || 0}%
+                      </div>
+                      <div class="text-[9px] text-slate-400">시황변동</div>
+                    </div>
+                    <div class="rounded ${vs.estimatedPL >= 0 ? 'bg-emerald-50' : 'bg-red-50'} p-1">
+                      <div class="font-bold ${vs.estimatedPL >= 0 ? 'text-emerald-600' : 'text-red-600'}">
+                        ${vs.estimatedPL >= 0 ? '+' : ''}${(vs.estimatedPL || 0).toLocaleString()}
+                      </div>
+                      <div class="text-[9px] text-slate-400">${vs.estimatedPL >= 0 ? '추정이익' : '추정손해'}</div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
           <div class="grid grid-cols-4 gap-3">
             <div class="stat-card text-center">
               <div class="text-2xl font-bold text-slate-800">${(s.targetCount || 0).toLocaleString()}</div>
