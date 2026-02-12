@@ -121,10 +121,9 @@ export function executeStepB1(): {
 
     if (priceRows && priceRows.length > 0) {
       const pt = priceRows[0];
-      // 본체가 = BODY2-변환 (총액)
-      const body2 = pt['BODY2-변환'] || 0;
-      const ptQty = pt.수량 > 0 ? pt.수량 : 1;
-      const unitBody2 = body2 / ptQty;
+      // 본체가 = 바디단가-변환 (kg당 단가) × 견적중량
+      const bodyUnitPrice = pt['바디단가-변환'] || 0;  // kg당 계약단가
+      const quoteWeight = vr['중량'] || 0;  // 견적 중량 (kg)
 
       const { total: optTotal, detail: optDetail } = calcOptionPrice(
         pt, 
@@ -134,8 +133,8 @@ export function executeStepB1(): {
         vr.상세사양
       );
       
-      // 본체가 = BODY2-변환 기준 (수량 적용)
-      const bodyTotal = unitBody2 * qty;
+      // 본체가 = 바디단가-변환 × 견적중량 (수량 적용)
+      const bodyTotal = bodyUnitPrice * quoteWeight * qty;
       const optionTotal = optTotal * qty;
       const contractTotal = bodyTotal + optionTotal;
 
@@ -172,7 +171,7 @@ export function executeStepB1(): {
     rules: [
       '1순위: 밸브타입+사이즈 일치 (타입+사이즈일치)',
       '2순위: 밸브타입만 일치 (타입일치)',
-      '본체가 = 단가TBL BODY2-변환',
+      '본체가 = 바디단가-변환(kg당) × 견적중량',
       '차이 = (견적가-계약총액)/계약총액 × 100%'
     ]
   };
