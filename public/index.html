@@ -516,8 +516,7 @@
           aiReportArea.style.display = 'block';
           document.getElementById('ai-report-text').innerHTML = formatAIComments(data.data);
         }
-        // 자동 PO 체크 - 견적가가 협상목표가 이하인 항목 확인
-        checkAutoPO(data.data || []);
+
       } else if (step.id === 'c') {
         msgEl.innerHTML = `<span class="fade-in">🌐 LME 원자재 시황 데이터를 수집하고 분석합니다...</span>`;
         renderStepCDetails(data, detailsEl);

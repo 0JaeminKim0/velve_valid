@@ -478,6 +478,9 @@ export interface StepB3Result {
   No: number;
   자재번호: string;
   자재내역: string;
+  'Body가': number;
+  '옵션가(IP)': number;
+  '옵션가(OP)': number;
   견적가: number;
   계약단가: number;
   발주일: string;
@@ -807,6 +810,9 @@ export function executeStepB3(): {
       No: b1.No,
       자재번호: b1.자재번호,
       자재내역: b1.자재내역,
+      'Body가': b1.본체가 || 0,
+      '옵션가(IP)': b2?.['옵션가(IP)'] || 0,
+      '옵션가(OP)': b2?.['옵션가(OP)'] || 0,
       견적가: b1.견적가,
       계약단가: b1.계약총액,
       발주일: b2?.발주일 || '-',
