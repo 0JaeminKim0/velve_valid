@@ -29,7 +29,7 @@ export interface StepA1Result {
   '옵션가(OP)': number;
   합계: number;
   수량: number;
-  추천총액: number;
+  적정단가: number;
   옵션상세: string;
   계약업체: string;
 }
@@ -201,7 +201,7 @@ export function executeStepA1(): {
       '옵션가(OP)': 0,
       합계: 0,
       수량: qty,
-      추천총액: 0,
+      적정단가: 0,
       옵션상세: '-',
       계약업체: ''
     };
@@ -238,7 +238,7 @@ export function executeStepA1(): {
       result['옵션가(NP)'] = Math.round(npValue);
       result['옵션가(OP)'] = Math.round(opValue);
       result.합계 = Math.round(unitSum);
-      result.추천총액 = Math.round(unitSum * qty);
+      result.적정단가 = Math.round(unitSum * qty);
       result.옵션상세 = Object.keys(optDetail).length > 0 
         ? Object.entries(optDetail).map(([k, v]) => `${k}:${v.toLocaleString()}`).join(', ')
         : '-';
