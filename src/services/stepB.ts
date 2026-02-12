@@ -303,6 +303,7 @@ export interface StepB2Result {
   '옵션가(IP)': number;
   '옵션가(OP)': number;
   견적가: number;
+  발주일: string;
   최근발주가: number;
   목표가: number;
   차이: string;
@@ -360,6 +361,7 @@ export function executeStepB2(): {
       '옵션가(IP)': vr['내부도장-변환'] || 0,
       '옵션가(OP)': vr['외부도장-변환'] || 0,
       견적가: vr['견적가-변환'],
+      발주일: '-',
       최근발주가: 0,
       목표가: 0,
       차이: '-'
@@ -391,6 +393,7 @@ export function executeStepB2(): {
 
           result.매핑유형 = '유사타입';
           result.실적업체 = top.발주업체 || '';
+          result.발주일 = top.발주일 ? String(top.발주일).substring(0, 10) : '-';
           result.최근발주가 = Math.round(recentPrice);
           result.목표가 = Math.round(targetPrice);
           if (targetPrice > 0) {
@@ -421,6 +424,7 @@ export function executeStepB2(): {
 
         result.매핑유형 = '동일내역';
         result.실적업체 = top.발주업체 || '';
+        result.발주일 = top.발주일 ? String(top.발주일).substring(0, 10) : '-';
         result.최근발주가 = Math.round(recentPrice);
         result.목표가 = Math.round(targetPrice);
         // 차이 = (견적가 - 목표가) / 목표가 * 100 퍼센티지
@@ -440,6 +444,7 @@ export function executeStepB2(): {
 
         result.매핑유형 = '유사타입';
         result.실적업체 = top.발주업체 || '';
+        result.발주일 = top.발주일 ? String(top.발주일).substring(0, 10) : '-';
         result.최근발주가 = Math.round(recentPrice);
         result.목표가 = Math.round(targetPrice);
         if (targetPrice > 0) {
@@ -475,6 +480,7 @@ export interface StepB3Result {
   자재내역: string;
   견적가: number;
   계약단가: number;
+  발주일: string;
   최근발주가: number;
   협상목표가: number;
   적정성: string;
@@ -803,6 +809,7 @@ export function executeStepB3(): {
       자재내역: b1.자재내역,
       견적가: b1.견적가,
       계약단가: b1.계약총액,
+      발주일: b2?.발주일 || '-',
       최근발주가: b2?.최근발주가 || 0,
       협상목표가: b2?.목표가 || 0,
       적정성: '판단불가',
