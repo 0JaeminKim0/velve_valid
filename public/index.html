@@ -638,7 +638,10 @@
 
     function renderB1Details(data, container) {
       const s = data.summary || {};
-      const v = s.검증결과 || {};
+      // 옵션가, 차이 발생 원인 관련 규칙 필터링
+      const filteredRules = (data.rules || []).filter(r => 
+        !r.includes('옵션가') && !r.includes('차이 발생 원인')
+      );
       container.innerHTML = `
         <div class="space-y-4 fade-in">
           <div class="bg-slate-50 rounded-xl p-4">
@@ -649,41 +652,12 @@
               </button>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
-              ${(data.rules || []).map(r => `
+              ${filteredRules.map(r => `
                 <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
                   <i class="ri-checkbox-circle-line text-emerald-500 mt-0.5"></i>
                   <span>${r}</span>
                 </div>
               `).join('')}
-            </div>
-          </div>
-          
-          <!-- 차이 검증 요약 -->
-          <div class="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-100">
-            <h4 class="font-semibold text-violet-800 mb-3 text-sm flex items-center gap-2">
-              <i class="ri-verified-badge-line"></i> 견적가-계약총액 검증 결과
-            </h4>
-            <div class="grid grid-cols-5 gap-2">
-              <div class="bg-white rounded-lg p-3 text-center border border-emerald-200">
-                <div class="text-xl font-bold text-emerald-600">${v.일치 || 0}</div>
-                <div class="text-[9px] text-emerald-600 font-medium mt-1">일치</div>
-              </div>
-              <div class="bg-white rounded-lg p-3 text-center border border-red-200">
-                <div class="text-xl font-bold text-red-600">${v.견적초과 || 0}</div>
-                <div class="text-[9px] text-red-600 font-medium mt-1">견적초과</div>
-              </div>
-              <div class="bg-white rounded-lg p-3 text-center border border-blue-200">
-                <div class="text-xl font-bold text-blue-600">${v.견적미달 || 0}</div>
-                <div class="text-[9px] text-blue-600 font-medium mt-1">견적미달</div>
-              </div>
-              <div class="bg-white rounded-lg p-3 text-center border border-orange-200">
-                <div class="text-xl font-bold text-orange-600">${v.본체가차이 || 0}</div>
-                <div class="text-[9px] text-orange-600 font-medium mt-1">본체가차이</div>
-              </div>
-              <div class="bg-white rounded-lg p-3 text-center border border-purple-200">
-                <div class="text-xl font-bold text-purple-600">${v.옵션차이 || 0}</div>
-                <div class="text-[9px] text-purple-600 font-medium mt-1">옵션차이</div>
-              </div>
             </div>
           </div>
           
