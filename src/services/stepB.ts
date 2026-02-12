@@ -365,6 +365,298 @@ export interface StepB3Result {
   AI코멘트?: string;
 }
 
+// 차이 분석 인터페이스
+export interface PriceDiffDetail {
+  항목: string;
+  견적가: number;
+  계약단가: number;
+  차이: number;
+  차이율: string;
+  비고: string;
+}
+
+export interface PriceDiffAnalysis {
+  No: number;
+  자재번호: string;
+  자재내역: string;
+  밸브타입: string;
+  매핑상태: string;
+  견적가: number;
+  계약총액: number;
+  차이: number;
+  차이율: string;
+  상세분석: PriceDiffDetail[];
+  차이원인: string[];
+}
+
+// Step B-1 확장: 견적가 vs 계약총액 차이 원인 분석
+export function analyzePriceDifference(itemNo?: number): {
+  results: PriceDiffAnalysis[];
+  summary: {
+    total: number;
+    analyzed: number;
+    hasBodyDiff: number;
+    hasOptionDiff: number;
+    hasMissingOption: number;
+  };
+} {
+  const vendorQuotes = getVendorQuotes();
+  const priceLookup = getPriceLookup();
+  const priceTable = getPriceTable();
+  const results: PriceDiffAnalysis[] = [];
+
+  // 타입만으로 매핑하기 위한 보조 lookup
+  const typeOnlyLookup = new Map<string, any[]>();
+  for (const pt of priceTable) {
+    const vtype = pt.밸브타입;
+    if (vtype) {
+      if (!typeOnlyLookup.has(vtype)) {
+        typeOnlyLookup.set(vtype, []);
+      }
+      typeOnlyLookup.get(vtype)!.push(pt);
+    }
+  }
+
+  const targetQuotes = itemNo 
+    ? vendorQuotes.filter(v => v.No === itemNo)
+    : vendorQuotes;
+
+  for (const vr of targetQuotes) {
+    const vk = vr.vtype_key || '';
+    const vtype = vr['Valve Type'] || '';
+    const desc = vr.자재내역;
+    const qty = vr.수량 > 0 ? vr.수량 : 1;
+
+    const analysis: PriceDiffAnalysis = {
+      No: vr.No,
+      자재번호: vr.자재번호,
+      자재내역: desc,
+      밸브타입: vtype,
+      매핑상태: '실패',
+      견적가: vr['견적가-변환'],
+      계약총액: 0,
+      차이: 0,
+      차이율: '-',
+      상세분석: [],
+      차이원인: []
+    };
+
+    // 1순위: vtype_key (타입+사이즈) 매핑
+    let priceRows = priceLookup.get(vk);
+    
+    // 2순위: 타입만 매핑
+    if (!priceRows || priceRows.length === 0) {
+      priceRows = typeOnlyLookup.get(vtype);
+    }
+
+    if (!priceRows || priceRows.length === 0) {
+      analysis.차이원인.push('단가표 매핑 실패 - 계약단가 비교 불가');
+      results.push(analysis);
+      continue;
+    }
+
+    analysis.매핑상태 = '성공';
+    const pt = priceRows[0];
+
+    // === 견적 데이터에서 구성요소 추출 ===
+    const quoteBody = vr['단가-변환'] || 0;  // 견적 본체가
+    const quoteNP = vr['N/P-변환'] || 0;
+    const quoteExtCoating = vr['외부도장-변환'] || 0;
+    const quoteIntCoating = vr['내부도장-변환'] || 0;
+    const quoteLock = vr['LOCK-변환'] || 0;
+    const quoteRubC = vr['RUB-C-변환'] || 0;
+    const quoteWeight = vr['중량'] || 0;
+
+    // === 계약 단가표에서 구성요소 추출 ===
+    const contractBodyUnit = pt['바디단가-변환'] || 0;  // kg당 단가
+    const contractBody = contractBodyUnit * quoteWeight * qty;
+    const contractNP = (pt['N/P-변환'] || 0) * qty;
+    const contractExtCoating = (pt['O-P-변환'] || 0) * qty;
+    const contractIntCoating = (pt['I-P-변환'] || 0) * qty;
+    const contractLock = (pt['LOCK-변환'] || 0) * qty;
+    const contractDisc = (pt['DISC-SCS16-변환'] || 0) * qty;
+
+    // 계약총액 계산 (실제 옵션 항목 기반)
+    let contractTotal = contractBody;
+    const optionItems: PriceDiffDetail[] = [];
+
+    // === 상세 비교 분석 ===
+    // 1. 본체가 비교
+    const bodyDiff = (quoteBody * qty) - contractBody;
+    const bodyDiffRate = contractBody > 0 ? (bodyDiff / contractBody * 100) : 0;
+    analysis.상세분석.push({
+      항목: '본체가',
+      견적가: Math.round(quoteBody * qty),
+      계약단가: Math.round(contractBody),
+      차이: Math.round(bodyDiff),
+      차이율: contractBody > 0 ? (bodyDiffRate >= 0 ? '+' : '') + bodyDiffRate.toFixed(1) + '%' : '-',
+      비고: `kg당 단가: 견적 ${vr['KG당/단가-변환'] || 0}원, 계약 ${contractBodyUnit}원 (중량 ${quoteWeight}kg)`
+    });
+
+    if (Math.abs(bodyDiff) > 100) {
+      if (bodyDiff > 0) {
+        analysis.차이원인.push(`본체가 상승 (+${Math.round(bodyDiff).toLocaleString()}원): kg당 단가 또는 중량 차이`);
+      } else {
+        analysis.차이원인.push(`본체가 하락 (${Math.round(bodyDiff).toLocaleString()}원): kg당 단가 또는 중량 차이`);
+      }
+    }
+
+    // 2. N/P 비교
+    if (quoteNP > 0 || contractNP > 0) {
+      const npDiff = (quoteNP * qty) - contractNP;
+      contractTotal += contractNP;
+      analysis.상세분석.push({
+        항목: 'N/P(네임플레이트)',
+        견적가: Math.round(quoteNP * qty),
+        계약단가: Math.round(contractNP),
+        차이: Math.round(npDiff),
+        차이율: contractNP > 0 ? (npDiff >= 0 ? '+' : '') + (npDiff / contractNP * 100).toFixed(1) + '%' : '-',
+        비고: contractNP === 0 ? '계약단가표에 N/P 단가 없음' : ''
+      });
+      if (Math.abs(npDiff) > 100) {
+        if (contractNP === 0) {
+          analysis.차이원인.push(`N/P 추가 (+${Math.round(npDiff).toLocaleString()}원): 계약에 미포함된 옵션`);
+        } else {
+          analysis.차이원인.push(`N/P 단가 차이 (${npDiff > 0 ? '+' : ''}${Math.round(npDiff).toLocaleString()}원)`);
+        }
+      }
+    }
+
+    // 3. 외부도장 비교
+    if (quoteExtCoating > 0 || contractExtCoating > 0) {
+      const extDiff = (quoteExtCoating * qty) - contractExtCoating;
+      contractTotal += contractExtCoating;
+      analysis.상세분석.push({
+        항목: '외부도장(O-P)',
+        견적가: Math.round(quoteExtCoating * qty),
+        계약단가: Math.round(contractExtCoating),
+        차이: Math.round(extDiff),
+        차이율: contractExtCoating > 0 ? (extDiff >= 0 ? '+' : '') + (extDiff / contractExtCoating * 100).toFixed(1) + '%' : '-',
+        비고: contractExtCoating === 0 ? '계약단가표에 외부도장 단가 없음' : `도장코드: ${vr.외부도장 || 'N/A'}`
+      });
+      if (Math.abs(extDiff) > 100) {
+        if (contractExtCoating === 0) {
+          analysis.차이원인.push(`외부도장 추가 (+${Math.round(extDiff).toLocaleString()}원): 계약에 미포함된 옵션`);
+        } else {
+          analysis.차이원인.push(`외부도장 단가 차이 (${extDiff > 0 ? '+' : ''}${Math.round(extDiff).toLocaleString()}원)`);
+        }
+      }
+    }
+
+    // 4. 내부도장 비교
+    if (quoteIntCoating > 0 || contractIntCoating > 0) {
+      const intDiff = (quoteIntCoating * qty) - contractIntCoating;
+      contractTotal += contractIntCoating;
+      analysis.상세분석.push({
+        항목: '내부도장(I-P)',
+        견적가: Math.round(quoteIntCoating * qty),
+        계약단가: Math.round(contractIntCoating),
+        차이: Math.round(intDiff),
+        차이율: contractIntCoating > 0 ? (intDiff >= 0 ? '+' : '') + (intDiff / contractIntCoating * 100).toFixed(1) + '%' : '-',
+        비고: contractIntCoating === 0 ? '계약단가표에 내부도장 단가 없음' : `도장코드: ${vr.내부도장 || 'N/A'}`
+      });
+      if (Math.abs(intDiff) > 100) {
+        if (contractIntCoating === 0) {
+          analysis.차이원인.push(`내부도장 추가 (+${Math.round(intDiff).toLocaleString()}원): 계약에 미포함된 옵션`);
+        } else {
+          analysis.차이원인.push(`내부도장 단가 차이 (${intDiff > 0 ? '+' : ''}${Math.round(intDiff).toLocaleString()}원)`);
+        }
+      }
+    }
+
+    // 5. LOCK 비교
+    if (quoteLock > 0 || contractLock > 0) {
+      const lockDiff = (quoteLock * qty) - contractLock;
+      contractTotal += contractLock;
+      analysis.상세분석.push({
+        항목: 'LOCK',
+        견적가: Math.round(quoteLock * qty),
+        계약단가: Math.round(contractLock),
+        차이: Math.round(lockDiff),
+        차이율: contractLock > 0 ? (lockDiff >= 0 ? '+' : '') + (lockDiff / contractLock * 100).toFixed(1) + '%' : '-',
+        비고: contractLock === 0 ? '계약단가표에 LOCK 단가 없음' : ''
+      });
+      if (Math.abs(lockDiff) > 100) {
+        if (contractLock === 0) {
+          analysis.차이원인.push(`LOCK 추가 (+${Math.round(lockDiff).toLocaleString()}원): 계약에 미포함된 옵션`);
+        } else {
+          analysis.차이원인.push(`LOCK 단가 차이 (${lockDiff > 0 ? '+' : ''}${Math.round(lockDiff).toLocaleString()}원)`);
+        }
+      }
+    }
+
+    // 6. RUB-C/DISC 비교
+    if (quoteRubC > 0 || contractDisc > 0) {
+      const discDiff = (quoteRubC * qty) - contractDisc;
+      contractTotal += contractDisc;
+      analysis.상세분석.push({
+        항목: 'RUB-C/DISC',
+        견적가: Math.round(quoteRubC * qty),
+        계약단가: Math.round(contractDisc),
+        차이: Math.round(discDiff),
+        차이율: contractDisc > 0 ? (discDiff >= 0 ? '+' : '') + (discDiff / contractDisc * 100).toFixed(1) + '%' : '-',
+        비고: contractDisc === 0 ? '계약단가표에 DISC 단가 없음' : ''
+      });
+      if (Math.abs(discDiff) > 100) {
+        analysis.차이원인.push(`RUB-C/DISC 단가 차이 (${discDiff > 0 ? '+' : ''}${Math.round(discDiff).toLocaleString()}원)`);
+      }
+    }
+
+    // === 총합 계산 ===
+    analysis.계약총액 = Math.round(contractTotal);
+    analysis.차이 = Math.round(analysis.견적가 - contractTotal);
+    
+    if (contractTotal > 0) {
+      const diffPercent = (analysis.견적가 - contractTotal) / contractTotal * 100;
+      analysis.차이율 = (diffPercent >= 0 ? '+' : '') + diffPercent.toFixed(1) + '%';
+    }
+
+    // 총합 정보 추가
+    analysis.상세분석.push({
+      항목: '합계',
+      견적가: analysis.견적가,
+      계약단가: analysis.계약총액,
+      차이: analysis.차이,
+      차이율: analysis.차이율,
+      비고: `수량: ${qty}개`
+    });
+
+    // 차이 원인 없으면 기본 메시지
+    if (analysis.차이원인.length === 0) {
+      if (Math.abs(analysis.차이) < 100) {
+        analysis.차이원인.push('견적가와 계약총액이 거의 일치');
+      } else {
+        analysis.차이원인.push('원인 불명 - 상세 항목 확인 필요');
+      }
+    }
+
+    results.push(analysis);
+  }
+
+  // 요약 통계
+  const analyzed = results.filter(r => r.매핑상태 === '성공').length;
+  const hasBodyDiff = results.filter(r => 
+    r.상세분석.some(d => d.항목 === '본체가' && Math.abs(d.차이) > 100)
+  ).length;
+  const hasOptionDiff = results.filter(r => 
+    r.상세분석.some(d => d.항목 !== '본체가' && d.항목 !== '합계' && Math.abs(d.차이) > 100)
+  ).length;
+  const hasMissingOption = results.filter(r => 
+    r.차이원인.some(reason => reason.includes('계약에 미포함'))
+  ).length;
+
+  return {
+    results,
+    summary: {
+      total: results.length,
+      analyzed,
+      hasBodyDiff,
+      hasOptionDiff,
+      hasMissingOption
+    }
+  };
+}
+
 // Step B-3: 가격 적정성 판정
 export function executeStepB3(): {
   results: StepB3Result[];

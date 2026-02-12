@@ -14,7 +14,7 @@ import {
   getLME 
 } from './services/dataLoader';
 import { executeStepA1, executeStepA2, generatePRItems, getPRData } from './services/stepA';
-import { executeStepB1, executeStepB2, executeStepB3, getQuoteData } from './services/stepB';
+import { executeStepB1, executeStepB2, executeStepB3, getQuoteData, analyzePriceDifference } from './services/stepB';
 import { executeStepC, getLMEData, getMonthlyVendorPrices } from './services/stepC';
 import { 
   generateItemComment, 
@@ -225,6 +225,29 @@ app.get('/api/step/b1', async (c) => {
     title: '계약단가 비교',
     message: '협력사 견적을 계약단가 기준으로 검증합니다.',
     rules: result.rules,
+    summary: result.summary,
+    data: result.results
+  });
+});
+
+// Step B-1 차이 분석: 견적가 vs 계약총액 차이 원인 분석
+app.get('/api/step/b1/analysis', async (c) => {
+  await loadAllData();
+  const itemNo = c.req.query('no') ? parseInt(c.req.query('no')!) : undefined;
+  const result = analyzePriceDifference(itemNo);
+
+  return c.json({
+    step: 'B-1 분석',
+    title: '견적가-계약총액 차이 원인 분석',
+    message: itemNo 
+      ? `No.${itemNo} 항목의 견적가와 계약총액 차이 원인을 분석합니다.`
+      : `전체 ${result.summary.total}건의 견적가와 계약총액 차이 원인을 분석합니다.`,
+    rules: [
+      '본체가 = 바디단가-변환(kg당) × 견적중량',
+      '옵션가 = N/P + 외부도장 + 내부도장 + LOCK + 기타',
+      '계약총액 = 본체가 + 옵션가',
+      '차이 = 견적가 - 계약총액'
+    ],
     summary: result.summary,
     data: result.results
   });

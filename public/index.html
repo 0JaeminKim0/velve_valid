@@ -637,7 +637,12 @@
       container.innerHTML = `
         <div class="space-y-4 fade-in">
           <div class="bg-slate-50 rounded-xl p-4">
-            <h4 class="font-semibold text-slate-700 mb-3 text-sm">계약단가 비교 기준</h4>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-semibold text-slate-700 text-sm">계약단가 비교 기준</h4>
+              <button onclick="openDiffAnalysis()" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-200 transition flex items-center gap-1">
+                <i class="ri-search-line"></i> 차이 원인 분석
+              </button>
+            </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
               ${(data.rules || []).map(r => `
                 <div class="flex items-start gap-2 text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-100">
@@ -1031,6 +1036,242 @@
       }
 
       return val;
+    }
+
+    // 차이 분석 기능
+    let diffAnalysisData = null;
+
+    async function openDiffAnalysis() {
+      // 모달 생성
+      const modal = document.createElement('div');
+      modal.id = 'diff-analysis-modal';
+      modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl w-[90%] max-w-5xl max-h-[85vh] overflow-hidden shadow-2xl">
+          <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="ri-search-eye-line text-white text-xl"></i>
+              <h2 class="text-white font-bold text-lg">견적가 vs 계약총액 차이 원인 분석</h2>
+            </div>
+            <button onclick="closeDiffAnalysis()" class="text-white/80 hover:text-white text-2xl">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          <div class="p-6 overflow-y-auto" style="max-height: calc(85vh - 120px);" id="diff-analysis-content">
+            <div class="flex items-center justify-center py-12">
+              <span class="text-slate-400">분석 중...</span>
+              <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-2"></span>
+              <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+              <span class="typing-dot inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full ml-1"></span>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      try {
+        const res = await fetch('/api/step/b1/analysis');
+        const data = await res.json();
+        diffAnalysisData = data;
+        renderDiffAnalysis(data);
+      } catch (e) {
+        document.getElementById('diff-analysis-content').innerHTML = `
+          <div class="text-red-600 text-center py-8">오류 발생: ${e.message}</div>
+        `;
+      }
+    }
+
+    function closeDiffAnalysis() {
+      const modal = document.getElementById('diff-analysis-modal');
+      if (modal) modal.remove();
+    }
+
+    function renderDiffAnalysis(data) {
+      const content = document.getElementById('diff-analysis-content');
+      const s = data.summary || {};
+      
+      content.innerHTML = `
+        <div class="space-y-6">
+          <!-- 요약 통계 -->
+          <div class="grid grid-cols-5 gap-3">
+            <div class="stat-card text-center">
+              <div class="text-2xl font-bold text-slate-800">${s.total || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">전체 분석</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-emerald-500">
+              <div class="text-2xl font-bold text-emerald-600">${s.analyzed || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">분석 완료</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-amber-500">
+              <div class="text-2xl font-bold text-amber-600">${s.hasBodyDiff || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">본체가 차이</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-indigo-500">
+              <div class="text-2xl font-bold text-indigo-600">${s.hasOptionDiff || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">옵션가 차이</div>
+            </div>
+            <div class="stat-card text-center border-t-2 border-red-500">
+              <div class="text-2xl font-bold text-red-600">${s.hasMissingOption || 0}</div>
+              <div class="text-xs text-slate-400 mt-1">미포함 옵션</div>
+            </div>
+          </div>
+
+          <!-- 항목 목록 -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold text-slate-700">항목별 차이 분석</h3>
+              <select id="diff-filter" onchange="filterDiffAnalysis()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5">
+                <option value="all">전체</option>
+                <option value="hasDiff">차이 있음</option>
+                <option value="success">매핑 성공</option>
+                <option value="failed">매핑 실패</option>
+              </select>
+            </div>
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <div class="max-h-96 overflow-y-auto" id="diff-items-list">
+                ${renderDiffItemsList(data.data || [])}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDiffItemsList(items) {
+      if (!items || items.length === 0) {
+        return '<div class="text-center text-slate-400 py-8">분석 데이터 없음</div>';
+      }
+
+      return items.map(item => {
+        const hasDiff = Math.abs(item.차이 || 0) > 100;
+        const diffClass = hasDiff ? 'border-l-4 border-l-red-400' : '';
+        const statusBadge = item.매핑상태 === '성공' 
+          ? '<span class="badge badge-success text-[10px]">성공</span>'
+          : '<span class="badge badge-danger text-[10px]">실패</span>';
+        
+        return `
+          <div class="border-b border-slate-100 last:border-b-0 ${diffClass}">
+            <div class="px-4 py-3 cursor-pointer hover:bg-slate-50 transition" onclick="toggleDiffDetail(${item.No})">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-xs font-bold text-slate-500">No.${item.No}</span>
+                  ${statusBadge}
+                  <span class="text-xs text-slate-600 truncate max-w-xs" title="${item.자재내역}">${item.자재내역?.substring(0, 35) || '-'}...</span>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="text-right">
+                    <div class="text-xs text-slate-400">견적가</div>
+                    <div class="text-sm font-semibold text-slate-700">${(item.견적가 || 0).toLocaleString()}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xs text-slate-400">계약총액</div>
+                    <div class="text-sm font-semibold text-slate-700">${(item.계약총액 || 0).toLocaleString()}</div>
+                  </div>
+                  <div class="text-right min-w-[80px]">
+                    <div class="text-xs text-slate-400">차이</div>
+                    <div class="text-sm font-bold ${item.차이 > 0 ? 'text-red-600' : item.차이 < 0 ? 'text-emerald-600' : 'text-slate-600'}">
+                      ${item.차이율 || '-'}
+                    </div>
+                  </div>
+                  <i class="ri-arrow-down-s-line text-slate-400 transition-transform" id="diff-arrow-${item.No}"></i>
+                </div>
+              </div>
+            </div>
+            <div id="diff-detail-${item.No}" class="hidden bg-slate-50 px-4 py-3">
+              ${renderDiffDetailContent(item)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDiffDetailContent(item) {
+      const details = item.상세분석 || [];
+      const reasons = item.차이원인 || [];
+
+      let detailTable = '';
+      if (details.length > 0) {
+        detailTable = `
+          <div class="mb-4">
+            <h4 class="text-xs font-semibold text-slate-600 mb-2">구성요소별 비교</h4>
+            <table class="w-full text-xs">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th class="px-3 py-2 text-left">항목</th>
+                  <th class="px-3 py-2 text-right">견적가</th>
+                  <th class="px-3 py-2 text-right">계약단가</th>
+                  <th class="px-3 py-2 text-right">차이</th>
+                  <th class="px-3 py-2 text-right">차이율</th>
+                  <th class="px-3 py-2 text-left">비고</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${details.map(d => {
+                  const isTotal = d.항목 === '합계';
+                  const rowClass = isTotal ? 'bg-indigo-50 font-semibold' : '';
+                  const diffColor = d.차이 > 0 ? 'text-red-600' : d.차이 < 0 ? 'text-emerald-600' : '';
+                  return `
+                    <tr class="${rowClass}">
+                      <td class="px-3 py-2">${d.항목}</td>
+                      <td class="px-3 py-2 text-right">${(d.견적가 || 0).toLocaleString()}</td>
+                      <td class="px-3 py-2 text-right">${(d.계약단가 || 0).toLocaleString()}</td>
+                      <td class="px-3 py-2 text-right ${diffColor}">${(d.차이 || 0).toLocaleString()}</td>
+                      <td class="px-3 py-2 text-right ${diffColor}">${d.차이율 || '-'}</td>
+                      <td class="px-3 py-2 text-slate-500">${d.비고 || ''}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      let reasonList = '';
+      if (reasons.length > 0) {
+        reasonList = `
+          <div>
+            <h4 class="text-xs font-semibold text-slate-600 mb-2">차이 원인</h4>
+            <div class="space-y-1">
+              ${reasons.map(r => `
+                <div class="flex items-start gap-2 text-xs">
+                  <i class="ri-error-warning-line text-amber-500 mt-0.5"></i>
+                  <span class="text-slate-700">${r}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      return detailTable + reasonList;
+    }
+
+    function toggleDiffDetail(no) {
+      const detail = document.getElementById(`diff-detail-${no}`);
+      const arrow = document.getElementById(`diff-arrow-${no}`);
+      if (detail) {
+        detail.classList.toggle('hidden');
+        if (arrow) {
+          arrow.style.transform = detail.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        }
+      }
+    }
+
+    function filterDiffAnalysis() {
+      if (!diffAnalysisData) return;
+      const filter = document.getElementById('diff-filter').value;
+      let items = diffAnalysisData.data || [];
+
+      if (filter === 'hasDiff') {
+        items = items.filter(i => Math.abs(i.차이 || 0) > 100);
+      } else if (filter === 'success') {
+        items = items.filter(i => i.매핑상태 === '성공');
+      } else if (filter === 'failed') {
+        items = items.filter(i => i.매핑상태 !== '성공');
+      }
+
+      document.getElementById('diff-items-list').innerHTML = renderDiffItemsList(items);
     }
   </script>
 </body>
