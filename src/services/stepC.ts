@@ -231,20 +231,18 @@ export function executeStepC(): {
         : 0;
 
       // 추정이익/손해액 계산
+      // 이익(+): 시황 상승 대비 단가를 덜 올렸거나 내린 경우 (절감)
+      // 손해(-): 시황 하락 대비 단가를 덜 내리거나 올린 경우 (초과 지출)
+      // 공식: (시황변동% - 단가변동%) × 현재단가 / 100
       const pc = priceChange;
       const mc = marketChange;
-      const halfMc = mc !== 0 ? mc / 2 : 0;
       
       let estPL = 0;
-      if (pc !== 0 && halfMc !== 0) {
-        estPL = Math.round(curr.평균단가 * (pc / halfMc));
-      } else if (pc === 0 && mc !== 0) {
-        estPL = Math.round(curr.평균단가 * (mc / 100));
-      } else if (mc === 0 && pc !== 0) {
-        estPL = Math.round(curr.평균단가 * (-pc / 100));
-      } else {
-        estPL = 0;
-      }
+      // 시황변동 대비 단가변동 차이로 이익/손해 계산
+      // 시황이 10% 올랐는데 단가가 5%만 올랐으면 5% 이익
+      // 시황이 10% 내렸는데 단가가 5%만 내렸으면 5% 손해
+      const savedPercent = mc - pc;  // 양수면 이익, 음수면 손해
+      estPL = Math.round(curr.평균단가 * curr.건수 * (savedPercent / 100));
 
       trendResults.push({
         업체: vendor,
