@@ -73,6 +73,13 @@ export function executeStepB1(): {
     matchRate: string;
     타입사이즈일치: number;
     타입일치: number;
+    검증결과: {
+      일치: number;
+      견적초과: number;
+      견적미달: number;
+      본체가차이: number;
+      옵션차이: number;
+    };
   };
   rules: string[];
 } {
@@ -237,6 +244,23 @@ export function executeStepB1(): {
   const matched = results.filter(r => r.매핑상태 === '성공').length;
   const 타입사이즈일치 = results.filter(r => r.매핑유형 === '타입+자재내역일치').length;
   const 타입일치 = results.filter(r => r.매핑유형 === '타입일치').length;
+  
+  // 차이 검증 통계
+  const 일치건수 = results.filter(r => r.원인 === '일치').length;
+  const 본체가차이 = results.filter(r => r.원인.includes('본체가')).length;
+  const 옵션차이 = results.filter(r => r.원인.includes('외부도장') || r.원인.includes('내부도장') || r.원인.includes('N/P') || r.원인.includes('LOCK')).length;
+  const 견적초과 = results.filter(r => {
+    const diff = r.차이;
+    if (diff === '-') return false;
+    const numValue = parseFloat(diff.replace('%', '').replace('+', ''));
+    return numValue > 0;
+  }).length;
+  const 견적미달 = results.filter(r => {
+    const diff = r.차이;
+    if (diff === '-') return false;
+    const numValue = parseFloat(diff.replace('%', '').replace('+', ''));
+    return numValue < 0;
+  }).length;
 
   return {
     results,
@@ -246,7 +270,15 @@ export function executeStepB1(): {
       unmatched: results.length - matched,
       matchRate: ((matched / results.length) * 100).toFixed(1) + '%',
       타입사이즈일치,
-      타입일치
+      타입일치,
+      // 차이 검증 요약
+      검증결과: {
+        일치: 일치건수,
+        견적초과: 견적초과,
+        견적미달: 견적미달,
+        본체가차이: 본체가차이,
+        옵션차이: 옵션차이
+      }
     },
     rules: [
       '1순위: 밸브타입+자재내역 일치 (타입+자재내역일치)',
@@ -254,7 +286,8 @@ export function executeStepB1(): {
       '본체가 = 바디단가-변환(kg당) × 견적중량',
       '옵션가(NP) = N/P-변환 값',
       '옵션가(OP) = O-P-변환 값',
-      '차이 = (견적가-계약총액)/계약총액 × 100%'
+      '차이 = (견적가-계약총액)/계약총액 × 100%',
+      '차이 발생 원인: 본체가, N/P, 외부도장, 내부도장, LOCK 항목별 비교'
     ]
   };
 }
@@ -303,7 +336,6 @@ export function executeStepB2(): {
     total: number;
     동일내역: number;
     유사타입: number;
-    유사내역: number;
     미매핑: number;
   };
   rules: string[];
@@ -357,7 +389,7 @@ export function executeStepB2(): {
           const recentPrice = unit * qty;
           const targetPrice = recentPrice * 0.9;
 
-          result.매핑유형 = '유사내역';
+          result.매핑유형 = '유사타입';
           result.실적업체 = top.발주업체 || '';
           result.최근발주가 = Math.round(recentPrice);
           result.목표가 = Math.round(targetPrice);
@@ -426,13 +458,11 @@ export function executeStepB2(): {
       total: results.length,
       동일내역: results.filter(r => r.매핑유형 === '동일내역').length,
       유사타입: results.filter(r => r.매핑유형 === '유사타입').length,
-      유사내역: results.filter(r => r.매핑유형 === '유사내역').length,
       미매핑: results.filter(r => r.매핑유형 === '미매핑').length
     },
     rules: [
       '동일내역: 밸브타입+내역 100% 일치',
-      '유사타입: 밸브타입만 일치',
-      '유사내역: 타입+사이즈+압력 일치 (밸브타입 없는 경우)',
+      '유사타입: 밸브타입만 일치 또는 키워드(타입+사이즈+압력) 일치',
       '목표가 = 최근발주가 × 90%',
       '차이 = (견적가-목표가)/목표가 × 100%'
     ]

@@ -83,6 +83,7 @@
     }
     
     .table-container { max-height: 600px; overflow: auto; }
+    .table-container table { min-width: 1800px; width: max-content; }
     .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
     .table-container::-webkit-scrollbar-track { background: #f8fafc; border-radius: 4px; }
     .table-container::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
@@ -258,7 +259,7 @@
       <!-- Results Table -->
       <div id="results-area" style="display: none;">
         <div class="flex items-center justify-between gap-4 mb-4" id="filter-bar"></div>
-        <div class="table-container border border-slate-200 rounded-xl overflow-hidden">
+        <div class="table-container border border-slate-200 rounded-xl">
           <table class="w-full text-sm" id="data-table">
             <thead class="bg-slate-50">
               <tr id="table-header"></tr>
@@ -637,6 +638,7 @@
 
     function renderB1Details(data, container) {
       const s = data.summary || {};
+      const v = s.검증결과 || {};
       container.innerHTML = `
         <div class="space-y-4 fade-in">
           <div class="bg-slate-50 rounded-xl p-4">
@@ -655,6 +657,36 @@
               `).join('')}
             </div>
           </div>
+          
+          <!-- 차이 검증 요약 -->
+          <div class="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-100">
+            <h4 class="font-semibold text-violet-800 mb-3 text-sm flex items-center gap-2">
+              <i class="ri-verified-badge-line"></i> 견적가-계약총액 검증 결과
+            </h4>
+            <div class="grid grid-cols-5 gap-2">
+              <div class="bg-white rounded-lg p-3 text-center border border-emerald-200">
+                <div class="text-xl font-bold text-emerald-600">${v.일치 || 0}</div>
+                <div class="text-[9px] text-emerald-600 font-medium mt-1">일치</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-red-200">
+                <div class="text-xl font-bold text-red-600">${v.견적초과 || 0}</div>
+                <div class="text-[9px] text-red-600 font-medium mt-1">견적초과</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-blue-200">
+                <div class="text-xl font-bold text-blue-600">${v.견적미달 || 0}</div>
+                <div class="text-[9px] text-blue-600 font-medium mt-1">견적미달</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-orange-200">
+                <div class="text-xl font-bold text-orange-600">${v.본체가차이 || 0}</div>
+                <div class="text-[9px] text-orange-600 font-medium mt-1">본체가차이</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center border border-purple-200">
+                <div class="text-xl font-bold text-purple-600">${v.옵션차이 || 0}</div>
+                <div class="text-[9px] text-purple-600 font-medium mt-1">옵션차이</div>
+              </div>
+            </div>
+          </div>
+          
           <div class="grid grid-cols-5 gap-3">
             <div class="stat-card text-center">
               <div class="text-2xl font-bold text-slate-800">${s.total || 0}</div>
@@ -863,7 +895,7 @@
         'a1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+자재내역일치', '타입일치'] }],
         'a2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
         'b1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+자재내역일치', '타입일치'] }],
-        'b2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '유사내역', '미매핑'] }],
+        'b2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
         'b3': [{ key: '적정성', options: ['전체', '우수', '보통', '부적절', '판단불가'] }],
         'c': [{ key: '적정성', options: ['전체', '양호', '적정', '주의'] }]
       };
@@ -1045,7 +1077,6 @@
       if (col === '매핑유형') {
         if (val === '동일내역' || val === '타입+자재내역일치') return `<span class="badge badge-success text-[10px]">${val}</span>`;
         if (val === '유사타입' || val === '타입일치') return `<span class="badge badge-warning text-[10px]">${val}</span>`;
-        if (val === '유사내역') return `<span class="badge badge-info text-[10px]">${val}</span>`;
         return `<span class="badge badge-danger text-[10px]">${val}</span>`;
       }
       if (col === '적정성') {
