@@ -190,6 +190,25 @@ export interface StepB2Result {
   차이: string;
 }
 
+// 자재내역에서 키워드 추출 (유사 매핑용)
+function extractDescKeywords(desc: string): { type: string; size: string; pressure: string } {
+  const normalized = desc.replace(/\s+/g, ' ').trim();
+  
+  // 밸브 종류 추출 (GLBE, HOSE, S-CLOSING 등)
+  const typeMatch = normalized.match(/^([A-Z-]+)/);
+  const type = typeMatch ? typeMatch[1] : '';
+  
+  // 사이즈 추출 (15A, 25A, 65A 등)
+  const sizeMatch = normalized.match(/(\d+A)/);
+  const size = sizeMatch ? sizeMatch[1] : '';
+  
+  // 압력 추출 (5K, 10K, 16K 등)
+  const pressMatch = normalized.match(/(\d+K)/);
+  const pressure = pressMatch ? pressMatch[1] : '';
+  
+  return { type, size, pressure };
+}
+
 // Step B-2: 견적 vs 발주실적 비교
 // 컬럼순서: 견적가 | 최근발주가 | 목표가 | 차이
 // 실적개당가 삭제, 차이는 견적가 대비 목표가 퍼센티지
@@ -225,8 +244,41 @@ export function executeStepB2(): {
       차이: '-'
     };
 
-    // vtype_key가 없으면 매핑 불가 (빈 문자열은 다른 빈 문자열과 매핑되어 잘못된 결과 발생)
+    // vtype_key가 없으면 자재내역 기반 유사 매핑 시도
     if (!vk) {
+      const qKeywords = extractDescKeywords(desc);
+      
+      // 타입+사이즈+압력이 일치하는 발주실적 찾기
+      if (qKeywords.type && qKeywords.size && qKeywords.pressure) {
+        const similarPool = performance.filter(r => {
+          if (!r.내역 || !r['Valve Type']) return false;
+          const pKeywords = extractDescKeywords(r.내역);
+          return pKeywords.type === qKeywords.type && 
+                 pKeywords.size === qKeywords.size && 
+                 pKeywords.pressure === qKeywords.pressure;
+        });
+        
+        if (similarPool.length > 0) {
+          similarPool.sort((a, b) =>
+            new Date(b.발주일 as string).getTime() - new Date(a.발주일 as string).getTime()
+          );
+          const top = similarPool[0];
+          const perfQty = top.요청수량 > 0 ? top.요청수량 : 1;
+          const unit = top['발주금액-변환'] / perfQty;
+          const recentPrice = unit * qty;
+          const targetPrice = recentPrice * 0.9;
+
+          result.매핑유형 = '유사내역';
+          result.실적업체 = top.발주업체 || '';
+          result.최근발주가 = Math.round(recentPrice);
+          result.목표가 = Math.round(targetPrice);
+          if (targetPrice > 0) {
+            const diffPercent = ((vr['견적가-변환'] - targetPrice) / targetPrice * 100);
+            result.차이 = (diffPercent >= 0 ? '+' : '') + diffPercent.toFixed(1) + '%';
+          }
+        }
+      }
+      
       results.push(result);
       continue;
     }
@@ -285,11 +337,13 @@ export function executeStepB2(): {
       total: results.length,
       동일내역: results.filter(r => r.매핑유형 === '동일내역').length,
       유사타입: results.filter(r => r.매핑유형 === '유사타입').length,
+      유사내역: results.filter(r => r.매핑유형 === '유사내역').length,
       미매핑: results.filter(r => r.매핑유형 === '미매핑').length
     },
     rules: [
       '동일내역: 밸브타입+내역 100% 일치',
       '유사타입: 밸브타입만 일치',
+      '유사내역: 타입+사이즈+압력 일치 (밸브타입 없는 경우)',
       '목표가 = 최근발주가 × 90%',
       '차이 = (견적가-목표가)/목표가 × 100%'
     ]
