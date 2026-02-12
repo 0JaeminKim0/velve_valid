@@ -266,6 +266,9 @@ export interface StepB2Result {
   매핑유형: string;  // 동일내역, 유사타입, 미매핑
   실적업체: string;
   수량: number;
+  'Body가': number;
+  '옵션가(IP)': number;
+  '옵션가(OP)': number;
   견적가: number;
   최근발주가: number;
   목표가: number;
@@ -321,6 +324,9 @@ export function executeStepB2(): {
       매핑유형: '미매핑',
       실적업체: '',
       수량: qty,
+      'Body가': vr['단가-변환'] || 0,
+      '옵션가(IP)': vr['내부도장-변환'] || 0,
+      '옵션가(OP)': vr['외부도장-변환'] || 0,
       견적가: vr['견적가-변환'],
       최근발주가: 0,
       목표가: 0,
