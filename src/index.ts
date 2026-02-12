@@ -364,6 +364,7 @@ app.get('/api/step/c', async (c) => {
     message: '🌐 LME 원자재 시황 데이터를 수집하고 발주가격 트렌드를 분석합니다.',
     targetInfo: result.targetInfo,
     yearSummary: result.yearSummary,
+    vendorSummaries: result.vendorSummaries,
     rules: [
       '양호: 시황↑ 단가 유지/하락',
       '적정: 시황과 단가 동일방향',

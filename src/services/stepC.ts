@@ -178,6 +178,67 @@ function getYearSummary(monthlyPrices: MonthlyVendorPrice[], lmeData: LMEData[])
   };
 }
 
+// 업체별 2025년 요약 계산
+function getVendorYearSummaries(monthlyPrices: MonthlyVendorPrice[], lmeData: LMEData[]) {
+  const prices2025 = monthlyPrices.filter(p => p.발주연월.startsWith('2025'));
+  if (prices2025.length === 0) return [];
+
+  // 업체별로 그룹화
+  const vendors = [...new Set(prices2025.map(p => p.발주업체))];
+  
+  // LME 변동 계산
+  const lmeSorted = lmeData.filter(l => l.연월.startsWith('2025')).sort((a, b) => a.연월.localeCompare(b.연월));
+  let marketChange = 0;
+  if (lmeSorted.length >= 2) {
+    const firstLme = lmeSorted[0];
+    const lastLme = lmeSorted[lmeSorted.length - 1];
+    marketChange = firstLme.Bronze환산 > 0
+      ? (lastLme.Bronze환산 - firstLme.Bronze환산) / firstLme.Bronze환산 * 100
+      : 0;
+  }
+
+  const summaries = vendors.map(vendor => {
+    const vendorPrices = prices2025.filter(p => p.발주업체 === vendor);
+    const totalOrders = vendorPrices.reduce((sum, p) => sum + p.건수, 0);
+    const totalAmount = vendorPrices.reduce((sum, p) => sum + p.총금액, 0);
+    const avgPrice = vendorPrices.reduce((sum, p) => sum + p.평균단가 * p.건수, 0) / totalOrders;
+
+    // 첫달과 마지막달 비교
+    const sorted = [...vendorPrices].sort((a, b) => a.발주연월.localeCompare(b.발주연월));
+    const firstMonth = sorted[0];
+    const lastMonth = sorted[sorted.length - 1];
+    
+    const priceChange = firstMonth.평균단가 > 0 
+      ? (lastMonth.평균단가 - firstMonth.평균단가) / firstMonth.평균단가 * 100 
+      : 0;
+
+    // 추정이익/손해액 계산
+    let estimatedPL = 0;
+    if (marketChange !== 0) {
+      const expectedChange = marketChange / 100;
+      const actualChange = priceChange / 100;
+      const savedRatio = expectedChange - actualChange;
+      estimatedPL = Math.round(totalAmount * savedRatio);
+    } else if (priceChange !== 0) {
+      estimatedPL = Math.round(-totalAmount * (priceChange / 100));
+    }
+
+    return {
+      vendor,
+      avgPrice: Math.round(avgPrice),
+      totalOrders,
+      totalAmount: Math.round(totalAmount),
+      priceChange: Math.round(priceChange * 10) / 10,
+      marketChange: Math.round(marketChange * 10) / 10,
+      estimatedPL,
+      period: sorted.length >= 2 ? `${firstMonth.발주연월} ~ ${lastMonth.발주연월}` : firstMonth.발주연월
+    };
+  });
+
+  // 발주금액 기준 상위 2개 업체 반환
+  return summaries.sort((a, b) => b.totalAmount - a.totalAmount).slice(0, 2);
+}
+
 // 시황 대비 가격 트렌드 분석
 export function executeStepC(): {
   lmeData: LMEData[];
@@ -185,6 +246,7 @@ export function executeStepC(): {
   trendResults: MarketTrendResult[];
   targetInfo: typeof TARGET_VALVE;
   yearSummary: ReturnType<typeof getYearSummary>;
+  vendorSummaries: ReturnType<typeof getVendorYearSummaries>;
   summary: {
     targetCount: number;
     양호: number;
@@ -276,6 +338,9 @@ export function executeStepC(): {
 
   // 연간 요약
   const yearSummary = getYearSummary(monthlyPrices, lmeData);
+  
+  // 업체별 연간 요약 (상위 2개)
+  const vendorSummaries = getVendorYearSummaries(monthlyPrices, lmeData);
 
   return {
     lmeData,
@@ -283,6 +348,7 @@ export function executeStepC(): {
     trendResults,
     targetInfo: TARGET_VALVE,
     yearSummary,
+    vendorSummaries,
     summary: {
       targetCount,
       양호: trendResults.filter(r => r.적정성 === '양호').length,
