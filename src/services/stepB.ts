@@ -225,6 +225,12 @@ export function executeStepB2(): {
       차이: '-'
     };
 
+    // vtype_key가 없으면 매핑 불가 (빈 문자열은 다른 빈 문자열과 매핑되어 잘못된 결과 발생)
+    if (!vk) {
+      results.push(result);
+      continue;
+    }
+
     const pool = performance.filter(r => r.vtype_key === vk);
 
     if (pool.length > 0) {
