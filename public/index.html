@@ -170,14 +170,14 @@
     <!-- 3 Set Cards -->
     <div class="grid grid-cols-3 gap-4 mb-6">
       
-      <!-- Set 1: PR 단가 추천 -->
+      <!-- Set 1: PR 건별 적정 단가 분석 -->
       <div class="set-card bg-white" id="set-1" onclick="selectSet(1)">
         <div class="set-header bg-gradient-to-r from-indigo-50 to-blue-50">
           <div class="flex items-center gap-2 mb-2">
             <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
               <i class="ri-price-tag-3-line text-white text-sm"></i>
             </div>
-            <h3 class="font-bold text-indigo-900">밸브재 PR 단가 추천</h3>
+            <h3 class="font-bold text-indigo-900">PR 건별 적정 단가 분석</h3>
           </div>
           <p class="text-xs text-indigo-600">구매요청 기반 적정단가 산출</p>
         </div>
@@ -311,7 +311,7 @@
     // Set definitions
     const sets = {
       1: {
-        name: 'PR 단가 추천',
+        name: 'PR 건별 적정 단가 분석',
         steps: [
           { id: 'pr', name: 'PR 접수', api: '/api/set1/pr' },
           { id: 'a1', name: '단가TBL 매핑', api: '/api/step/a1' },
