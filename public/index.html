@@ -82,10 +82,11 @@
       margin-right: 2px;
     }
     
-    .table-container { max-height: 450px; overflow: auto; }
-    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-container::-webkit-scrollbar-track { background: #f8fafc; border-radius: 3px; }
-    .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .table-container { max-height: 600px; overflow: auto; }
+    .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-container::-webkit-scrollbar-track { background: #f8fafc; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-thumb:hover { background: #64748b; }
     
     .badge { 
       display: inline-flex; 
@@ -785,7 +786,7 @@
           ${data.yearSummary ? `
           <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <h4 class="font-semibold text-blue-800 mb-2 text-sm">📈 2025년 전체 요약</h4>
-            <div class="grid grid-cols-4 gap-3 text-center">
+            <div class="grid grid-cols-5 gap-3 text-center">
               <div>
                 <div class="text-lg font-bold text-blue-700">${data.yearSummary.avgPrice?.toLocaleString() || '-'}</div>
                 <div class="text-[10px] text-blue-500">평균단가</div>
@@ -801,6 +802,10 @@
               <div>
                 <div class="text-lg font-bold ${data.yearSummary.marketChange >= 0 ? 'text-red-600' : 'text-emerald-600'}">${data.yearSummary.marketChange >= 0 ? '+' : ''}${data.yearSummary.marketChange?.toFixed(1) || 0}%</div>
                 <div class="text-[10px] text-blue-500">시황변동</div>
+              </div>
+              <div>
+                <div class="text-lg font-bold ${(data.yearSummary.estimatedPL || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${(data.yearSummary.estimatedPL || 0) >= 0 ? '+' : ''}${(data.yearSummary.estimatedPL || 0).toLocaleString()}</div>
+                <div class="text-[10px] text-blue-500">추정이익/손해</div>
               </div>
             </div>
           </div>

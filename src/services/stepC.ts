@@ -131,6 +131,7 @@ function getYearSummary(monthlyPrices: MonthlyVendorPrice[], lmeData: LMEData[])
   if (prices2025.length === 0) return null;
 
   const totalOrders = prices2025.reduce((sum, p) => sum + p.건수, 0);
+  const totalAmount = prices2025.reduce((sum, p) => sum + p.총금액, 0);
   const avgPrice = prices2025.reduce((sum, p) => sum + p.평균단가 * p.건수, 0) / totalOrders;
 
   // 첫달과 마지막달 비교
@@ -153,11 +154,26 @@ function getYearSummary(monthlyPrices: MonthlyVendorPrice[], lmeData: LMEData[])
       : 0;
   }
 
+  // 추정이익/손해액 계산: 시황변동 대비 단가변동 차이 × 총금액
+  // 시황이 올랐는데 단가가 덜 오르면 이익, 더 오르면 손해
+  let estimatedPL = 0;
+  if (marketChange !== 0) {
+    const expectedChange = marketChange / 100; // 시황변동에 따른 예상 단가변동
+    const actualChange = priceChange / 100;    // 실제 단가변동
+    const savedRatio = expectedChange - actualChange; // 절감 비율 (양수면 이익)
+    estimatedPL = Math.round(totalAmount * savedRatio);
+  } else if (priceChange !== 0) {
+    // 시황변동이 0인데 단가가 변동했으면
+    estimatedPL = Math.round(-totalAmount * (priceChange / 100));
+  }
+
   return {
     avgPrice: Math.round(avgPrice),
     totalOrders,
+    totalAmount: Math.round(totalAmount),
     priceChange: Math.round(priceChange * 10) / 10,
     marketChange: Math.round(marketChange * 10) / 10,
+    estimatedPL,
     period: `${firstMonth.발주연월} ~ ${lastMonth.발주연월}`
   };
 }
