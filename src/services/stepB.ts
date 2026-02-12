@@ -218,6 +218,7 @@ export function executeStepB2(): {
     total: number;
     동일내역: number;
     유사타입: number;
+    유사내역: number;
     미매핑: number;
   };
   rules: string[];
