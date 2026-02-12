@@ -25,6 +25,8 @@ export function getQuoteData(): {
     밸브타입: vr['Valve Type'] || '',
     수량: vr.수량,
     견적가: vr['견적가-변환'],
+    '옵션가(OP)': vr['외부도장-변환'] || 0,
+    '옵션가(IP)': vr['내부도장-변환'] || 0,
     견적번호: vr.견적번호 || ''
   }));
 
@@ -34,7 +36,7 @@ export function getQuoteData(): {
     data,
     summary: {
       total: vendorQuotes.length,
-      columns: 7,
+      columns: 9,
       uniqueTypes
     },
     dataType: 'quote'
