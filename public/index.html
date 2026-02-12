@@ -38,73 +38,43 @@
       background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
     }
     
-    .step-group { 
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      transition: all 0.3s ease;
-    }
-    .step-group.active { 
-      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-      border-color: #a5b4fc;
-    }
-    .step-group.completed { 
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      border-color: #6ee7b7;
-    }
-    
-    .step-item { 
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
+    /* Step Chip - Compact Text Style */
+    .step-chip {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      font-size: 14px;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
       font-weight: 600;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .step-item.pending { 
-      background: #f1f5f9; 
-      color: #94a3b8;
+    .step-chip.pending {
+      background: #f1f5f9;
+      color: #64748b;
       border: 1px solid #e2e8f0;
     }
-    .step-item.pending:hover {
+    .step-chip.pending:hover {
       background: #e2e8f0;
-      color: #64748b;
+      color: #475569;
     }
-    .step-item.active { 
+    .step-chip.active {
       background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: white;
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-      transform: scale(1.08);
+      border: none;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
     }
-    .step-item.completed { 
+    .step-chip.completed {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      border: none;
     }
-    
-    .connector { 
-      width: 24px;
-      height: 2px; 
-      background: #e2e8f0;
-      transition: all 0.3s ease;
-      border-radius: 1px;
+    .step-chip.completed::before {
+      content: '✓';
+      margin-right: 2px;
     }
-    .connector.completed { background: #10b981; }
-    .connector.active { background: linear-gradient(90deg, #10b981 0%, #6366f1 100%); }
-    
-    .group-connector {
-      width: 32px;
-      height: 2px;
-      background: #e2e8f0;
-      border-radius: 1px;
-    }
-    .group-connector.completed { background: #10b981; }
-    .group-connector.active { background: linear-gradient(90deg, #10b981 0%, #6366f1 100%); }
     
     .table-container { max-height: 500px; overflow: auto; }
     .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -215,76 +185,39 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-6 py-6">
-    <!-- Step Navigator - Grouped -->
-    <div class="step-nav-container rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
-      <div class="flex items-center gap-2" id="step-nav">
-        <!-- Group: 데이터 준비 -->
-        <div class="step-group" id="group-data">
-          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">① 준비</div>
-          <div class="flex items-center">
-            <div class="step-item pending" data-step="0" title="데이터 수집">
-              <i class="ri-database-2-line"></i>
-            </div>
-          </div>
+    <!-- Step Navigator - Compact Horizontal -->
+    <div class="step-nav-container rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+      <div class="flex items-center justify-between gap-3" id="step-nav">
+        <!-- Step Flow -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">준비</span>
+          <div class="step-chip pending" data-step="0">데이터 수집</div>
+          
+          <i class="ri-arrow-right-s-line text-slate-300"></i>
+          
+          <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">추천단가</span>
+          <div class="step-chip pending" data-step="a1">단가TBL</div>
+          <div class="step-chip pending" data-step="a2">발주실적</div>
+          
+          <i class="ri-arrow-right-s-line text-slate-300"></i>
+          
+          <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">견적검증</span>
+          <div class="step-chip pending" data-step="b1">계약비교</div>
+          <div class="step-chip pending" data-step="b2">실적비교</div>
+          <div class="step-chip pending" data-step="b3">적정성</div>
+          
+          <i class="ri-arrow-right-s-line text-slate-300"></i>
+          
+          <span class="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded">시황</span>
+          <div class="step-chip pending" data-step="c">시황분석</div>
         </div>
         
-        <div class="group-connector"></div>
-        
-        <!-- Group: 추천단가 -->
-        <div class="step-group" id="group-a">
-          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">② 추천단가</div>
-          <div class="flex items-center gap-1">
-            <div class="step-item pending" data-step="a1" title="계약단가 기준">
-              <i class="ri-file-text-line"></i>
-            </div>
-            <div class="connector"></div>
-            <div class="step-item pending" data-step="a2" title="발주실적 기준">
-              <i class="ri-history-line"></i>
-            </div>
-          </div>
-        </div>
-        
-        <div class="group-connector"></div>
-        
-        <!-- Group: 견적검증 -->
-        <div class="step-group flex-1" id="group-b">
-          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">③ 견적검증</div>
-          <div class="flex items-center gap-1">
-            <div class="step-item pending" data-step="b1" title="계약단가 비교">
-              <i class="ri-file-list-3-line"></i>
-            </div>
-            <div class="connector"></div>
-            <div class="step-item pending" data-step="b2" title="발주실적 비교">
-              <i class="ri-bar-chart-grouped-line"></i>
-            </div>
-            <div class="connector"></div>
-            <div class="step-item pending" data-step="b3" title="적정성 판정">
-              <i class="ri-shield-check-line"></i>
-            </div>
-          </div>
-        </div>
-        
-        <div class="group-connector"></div>
-        
-        <!-- Group: 시황분석 -->
-        <div class="step-group" id="group-c">
-          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">④ 시황분석</div>
-          <div class="flex items-center">
-            <div class="step-item pending" data-step="c" title="원자재 시황">
-              <i class="ri-line-chart-line"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Progress Bar -->
-      <div class="mt-4 pt-3 border-t border-slate-100">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-slate-500">분석 진행률</span>
+        <!-- Progress -->
+        <div class="flex items-center gap-2 flex-shrink-0">
           <span class="text-xs font-bold text-indigo-600" id="progress-text">0%</span>
-        </div>
-        <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+          <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -369,22 +302,22 @@
     let currentPage = 1;
     const pageSize = 30;
 
-    // Step structure - grouped (담당자 이해 가능 언어)
+    // Step structure - 실제 업무명으로 표시 (아이콘 제거)
     const steps = [
-      { id: '0', name: '데이터 수집', group: 'data', icon: 'ri-database-2-line' },
-      { id: 'a1', name: '계약단가 기준', group: 'a', icon: 'ri-file-text-line' },
-      { id: 'a2', name: '발주실적 기준', group: 'a', icon: 'ri-history-line' },
-      { id: 'b1', name: '계약단가 비교', group: 'b', icon: 'ri-file-list-3-line' },
-      { id: 'b2', name: '발주실적 비교', group: 'b', icon: 'ri-bar-chart-grouped-line' },
-      { id: 'b3', name: '적정성 판정', group: 'b', icon: 'ri-shield-check-line' },
-      { id: 'c', name: '원자재 시황', group: 'c', icon: 'ri-line-chart-line' }
+      { id: '0', name: '데이터 수집', group: 'data' },
+      { id: 'a1', name: '단가TBL', group: 'a' },
+      { id: 'a2', name: '발주실적', group: 'a' },
+      { id: 'b1', name: '계약비교', group: 'b' },
+      { id: 'b2', name: '실적비교', group: 'b' },
+      { id: 'b3', name: '적정성', group: 'b' },
+      { id: 'c', name: '시황분석', group: 'c' }
     ];
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       checkAPIStatus();
       
-      document.querySelectorAll('.step-item').forEach(el => {
+      document.querySelectorAll('.step-chip').forEach(el => {
         el.addEventListener('click', () => {
           const stepId = el.dataset.step;
           const stepIdx = steps.findIndex(s => s.id === stepId);
@@ -424,54 +357,16 @@
       document.getElementById('progress-bar').style.width = `${progress}%`;
       
       steps.forEach((step, idx) => {
-        const el = document.querySelector(`.step-item[data-step="${step.id}"]`);
+        const el = document.querySelector(`.step-chip[data-step="${step.id}"]`);
         if (!el) return;
         
-        el.classList.remove('pending', 'active', 'completed', 'pulse-active');
+        el.classList.remove('pending', 'active', 'completed');
         if (idx < currentStep) {
           el.classList.add('completed');
-          el.innerHTML = '<i class="ri-check-line"></i>';
         } else if (idx === currentStep) {
-          el.classList.add('active', 'pulse-active');
-          el.innerHTML = step.icon ? `<i class="${step.icon}"></i>` : step.label;
+          el.classList.add('active');
         } else {
           el.classList.add('pending');
-          el.innerHTML = step.icon ? `<i class="${step.icon}"></i>` : step.label;
-        }
-      });
-      
-      // Update group styles
-      const groups = ['data', 'a', 'b', 'c'];
-      const currentGroup = currentStep >= 0 ? steps[currentStep].group : null;
-      const completedGroups = new Set();
-      steps.forEach((step, idx) => {
-        if (idx < currentStep) completedGroups.add(step.group);
-      });
-      
-      groups.forEach(g => {
-        const groupEl = document.getElementById(`group-${g}`);
-        if (!groupEl) return;
-        groupEl.classList.remove('active', 'completed');
-        if (completedGroups.has(g) && g !== currentGroup) {
-          groupEl.classList.add('completed');
-        } else if (g === currentGroup) {
-          groupEl.classList.add('active');
-        }
-      });
-      
-      // Update group connectors
-      const groupConnectors = document.querySelectorAll('.group-connector');
-      const groupOrder = ['data', 'a', 'b', 'c'];
-      groupConnectors.forEach((c, idx) => {
-        c.classList.remove('completed', 'active');
-        const fromGroup = groupOrder[idx];
-        const toGroup = groupOrder[idx + 1];
-        if (completedGroups.has(fromGroup)) {
-          if (completedGroups.has(toGroup)) {
-            c.classList.add('completed');
-          } else if (toGroup === currentGroup) {
-            c.classList.add('active');
-          }
         }
       });
     }
