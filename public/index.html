@@ -514,6 +514,8 @@
           aiReportArea.style.display = 'block';
           document.getElementById('ai-report-text').innerHTML = formatAIComments(data.data);
         }
+        // 자동 PO 체크 - 견적가가 협상목표가 이하인 항목 확인
+        checkAutoPO(data.data || []);
       } else if (step.id === 'c') {
         msgEl.innerHTML = `<span class="fade-in">🌐 LME 원자재 시황 데이터를 수집하고 분석합니다...</span>`;
         renderStepCDetails(data, detailsEl);
@@ -1507,6 +1509,177 @@
           ` : ''}
         </div>
       `;
+    }
+
+    // 자동 PO 체크 및 팝업
+    function checkAutoPO(data) {
+      if (!data || data.length === 0) return;
+      
+      // PO 발행 대상: 견적가 <= 협상목표가 인 항목
+      const poEligible = data.filter(row => {
+        const estimate = row.견적가 || 0;
+        const target = row.협상목표가 || 0;
+        return target > 0 && estimate > 0 && estimate <= target;
+      });
+
+      // 0건이어도 팝업 표시
+      setTimeout(() => {
+        showAutoPOPopup(data.length, poEligible);
+      }, 500);
+    }
+
+    function showAutoPOPopup(total, poItems) {
+      const totalAmount = poItems.reduce((sum, item) => sum + (item.견적가 || 0), 0);
+      const savedAmount = poItems.reduce((sum, item) => {
+        const target = item.협상목표가 || 0;
+        const estimate = item.견적가 || 0;
+        return sum + (target - estimate);
+      }, 0);
+
+      const modal = document.createElement('div');
+      modal.id = 'auto-po-modal';
+      modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl w-[90%] max-w-3xl max-h-[85vh] overflow-hidden shadow-2xl animate-bounce-in">
+          <div class="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-5 text-center">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <i class="ri-checkbox-circle-fill text-white text-4xl"></i>
+            </div>
+            <h2 class="text-white font-bold text-xl">🎉 자동 PO 발행 대상 확인</h2>
+            <p class="text-white/80 text-sm mt-1">목표가 달성 항목이 발견되었습니다</p>
+          </div>
+          
+          <div class="p-6">
+            <!-- 요약 카드 -->
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-5 mb-5 border border-emerald-200">
+              <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div class="text-3xl font-bold text-emerald-600">${poItems.length}</div>
+                  <div class="text-xs text-slate-500 mt-1">PO 발행 대상</div>
+                </div>
+                <div>
+                  <div class="text-3xl font-bold text-slate-700">${total}</div>
+                  <div class="text-xs text-slate-500 mt-1">전체 견적</div>
+                </div>
+                <div>
+                  <div class="text-3xl font-bold text-indigo-600">${Math.round(poItems.length / total * 100)}%</div>
+                  <div class="text-xs text-slate-500 mt-1">달성률</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 금액 요약 -->
+            <div class="grid grid-cols-2 gap-4 mb-5">
+              <div class="bg-slate-50 rounded-xl p-4 text-center">
+                <div class="text-xs text-slate-500 mb-1">총 PO 발행 금액</div>
+                <div class="text-xl font-bold text-slate-800">${totalAmount.toLocaleString()}원</div>
+              </div>
+              <div class="bg-emerald-50 rounded-xl p-4 text-center">
+                <div class="text-xs text-emerald-600 mb-1">목표가 대비 절감액</div>
+                <div class="text-xl font-bold text-emerald-600">+${savedAmount.toLocaleString()}원</div>
+              </div>
+            </div>
+
+            <!-- 대상 목록 -->
+            <div class="mb-5">
+              <h3 class="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <i class="ri-file-list-3-line text-emerald-500"></i>
+                PO 발행 대상 목록
+              </h3>
+              <div class="border border-slate-200 rounded-xl overflow-hidden">
+                <div class="max-h-48 overflow-y-auto">
+                  <table class="w-full text-xs">
+                    <thead class="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-600">No</th>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-600">자재내역</th>
+                        <th class="px-3 py-2 text-right font-semibold text-slate-600">견적가</th>
+                        <th class="px-3 py-2 text-right font-semibold text-slate-600">목표가</th>
+                        <th class="px-3 py-2 text-right font-semibold text-slate-600">절감액</th>
+                        <th class="px-3 py-2 text-center font-semibold text-slate-600">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${poItems.map(item => {
+                        const saved = (item.협상목표가 || 0) - (item.견적가 || 0);
+                        return `
+                          <tr class="hover:bg-emerald-50/50">
+                            <td class="px-3 py-2 font-medium text-slate-700">${item.No || '-'}</td>
+                            <td class="px-3 py-2 text-slate-600 truncate max-w-[200px]" title="${item.자재내역 || ''}">${(item.자재내역 || '').substring(0, 30)}...</td>
+                            <td class="px-3 py-2 text-right font-medium text-slate-800">${(item.견적가 || 0).toLocaleString()}</td>
+                            <td class="px-3 py-2 text-right text-slate-600">${(item.협상목표가 || 0).toLocaleString()}</td>
+                            <td class="px-3 py-2 text-right font-semibold text-emerald-600">+${saved.toLocaleString()}</td>
+                            <td class="px-3 py-2 text-center">
+                              <span class="badge badge-success text-[10px]">
+                                <i class="ri-check-line"></i> 달성
+                              </span>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 버튼 -->
+            <div class="flex items-center justify-center gap-3">
+              <button onclick="closeAutoPOPopup()" class="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-200 transition">
+                닫기
+              </button>
+              <button onclick="confirmAutoPO(${poItems.length})" class="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transition flex items-center gap-2">
+                <i class="ri-send-plane-fill"></i>
+                PO 발행 진행
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // 애니메이션 스타일 추가
+      if (!document.getElementById('auto-po-styles')) {
+        const style = document.createElement('style');
+        style.id = 'auto-po-styles';
+        style.textContent = `
+          @keyframes bounce-in {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .animate-bounce-in { animation: bounce-in 0.3s ease-out; }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(modal);
+    }
+
+    function closeAutoPOPopup() {
+      const modal = document.getElementById('auto-po-modal');
+      if (modal) modal.remove();
+    }
+
+    function confirmAutoPO(count) {
+      closeAutoPOPopup();
+      
+      // 성공 토스트 메시지
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-6 right-6 bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-bounce-in';
+      toast.innerHTML = `
+        <i class="ri-checkbox-circle-fill text-2xl"></i>
+        <div>
+          <div class="font-semibold">PO 발행 요청 완료</div>
+          <div class="text-sm text-emerald-100">${count}건의 PO가 발행 대기중입니다</div>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
   </script>
 </body>
