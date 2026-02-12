@@ -442,9 +442,9 @@
       
       document.getElementById('btn-prev').disabled = currentStepIndex === 0;
       if (currentStepIndex >= set.steps.length - 1) {
-        document.getElementById('btn-next').innerHTML = '완료 <i class="ri-check-line"></i>';
-        document.getElementById('btn-next').disabled = true;
+        document.getElementById('btn-next').style.display = 'none';
       } else {
+        document.getElementById('btn-next').style.display = '';
         document.getElementById('btn-next').innerHTML = '다음 <i class="ri-arrow-right-line"></i>';
       }
     }
@@ -463,6 +463,7 @@
         }
         
         document.getElementById('btn-prev').disabled = currentStepIndex === 0;
+        document.getElementById('btn-next').style.display = '';
         document.getElementById('btn-next').disabled = false;
         document.getElementById('btn-next').innerHTML = '다음 <i class="ri-arrow-right-line"></i>';
       }
