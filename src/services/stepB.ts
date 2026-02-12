@@ -829,18 +829,25 @@ export function executeStepB3(): {
     const r100 = result.최근발주가;
     const cont = result.계약단가;
 
+    // 차이율 계산: (견적가 - 최근발주가) / 견적가 * 100
+    // 견적가 대비 최근발주가와의 차이 퍼센트
+    const calcDiffRate = () => {
+      if (est <= 0 || r100 <= 0) return '-';
+      const diff = ((est - r100) / est * 100);
+      return (diff >= 0 ? '+' : '') + diff.toFixed(1);
+    };
+
     if (est <= 0) {
       result.적정성 = '판단불가';
     } else if (r90 > 0 && r90 >= est) {
       result.적정성 = '우수';
-      result.차이율 = r100 > 0 ? ((est - r100) / r100 * 100).toFixed(1) : '-';
+      result.차이율 = calcDiffRate();
     } else if ((r100 > 0 && r100 >= est) || (cont > 0 && cont >= est)) {
       result.적정성 = '보통';
-      result.차이율 = r100 > 0 ? ((est - r100) / r100 * 100).toFixed(1) : '-';
+      result.차이율 = calcDiffRate();
     } else if (r100 > 0 || cont > 0) {
       result.적정성 = '부적절';
-      const basePrice = r100 > 0 ? r100 : cont;
-      result.차이율 = basePrice > 0 ? '+' + ((est - basePrice) / basePrice * 100).toFixed(1) : '-';
+      result.차이율 = calcDiffRate();
     } else {
       result.적정성 = '판단불가';
     }
