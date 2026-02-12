@@ -47,7 +47,7 @@ export interface StepB1Result {
   자재내역: string;
   밸브타입: string;
   매핑상태: string;
-  매핑유형: string;  // 업무용어: 타입+사이즈일치, 타입일치
+  매핑유형: string;  // 업무용어: 타입+자재내역일치, 타입일치
   수량: number;
   견적가: number;
   본체가: number;
@@ -113,7 +113,7 @@ export function executeStepB1(): {
 
     // 1순위: vtype_key (타입+사이즈) 매핑
     let priceRows = priceLookup.get(vk);
-    let mappingType = '타입+사이즈일치';
+    let mappingType = '타입+자재내역일치';
     
     // 2순위: 타입만 매핑
     if (!priceRows || priceRows.length === 0) {
@@ -224,7 +224,7 @@ export function executeStepB1(): {
   }
 
   const matched = results.filter(r => r.매핑상태 === '성공').length;
-  const 타입사이즈일치 = results.filter(r => r.매핑유형 === '타입+사이즈일치').length;
+  const 타입사이즈일치 = results.filter(r => r.매핑유형 === '타입+자재내역일치').length;
   const 타입일치 = results.filter(r => r.매핑유형 === '타입일치').length;
 
   return {
@@ -238,7 +238,7 @@ export function executeStepB1(): {
       타입일치
     },
     rules: [
-      '1순위: 밸브타입+사이즈 일치 (타입+사이즈일치)',
+      '1순위: 밸브타입+자재내역 일치 (타입+자재내역일치)',
       '2순위: 밸브타입만 일치 (타입일치)',
       '본체가 = 바디단가-변환(kg당) × 견적중량',
       '차이 = (견적가-계약총액)/계약총액 × 100%'

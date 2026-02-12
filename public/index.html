@@ -476,7 +476,7 @@
         const s = data.summary;
         if (setNum === 1) {
           if (step.id === 'pr') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">PR ${s.total?.toLocaleString() || 0}건 접수</span>`;
-          else if (step.id === 'a1') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">매핑 ${s.matchRate || '0%'} (타입+사이즈: ${s.타입사이즈일치 || 0}, 타입: ${s.타입일치 || 0})</span>`;
+          else if (step.id === 'a1') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">매핑 ${s.matchRate || '0%'} (타입+자재내역: ${s.타입사이즈일치 || 0}, 타입: ${s.타입일치 || 0})</span>`;
           else if (step.id === 'a2') summaryEl.innerHTML = `<span class="text-indigo-600 font-medium">동일 ${s.동일내역 || 0} / 유사 ${s.유사타입 || 0}</span>`;
         } else if (setNum === 2) {
           if (step.id === 'quote') summaryEl.innerHTML = `<span class="text-emerald-600 font-medium">견적 ${s.total?.toLocaleString() || 0}건</span>`;
@@ -582,7 +582,7 @@
             </div>
             <div class="stat-card text-center border-t-2 border-indigo-500">
               <div class="text-xl font-bold text-indigo-600">${s.타입사이즈일치 || 0}</div>
-              <div class="text-[10px] text-slate-400 mt-1">타입+사이즈일치</div>
+              <div class="text-[10px] text-slate-400 mt-1">타입+자재내역일치</div>
             </div>
             <div class="stat-card text-center border-t-2 border-amber-500">
               <div class="text-xl font-bold text-amber-600">${s.타입일치 || 0}</div>
@@ -665,7 +665,7 @@
             </div>
             <div class="stat-card text-center border-t-2 border-indigo-500">
               <div class="text-xl font-bold text-indigo-600">${s.타입사이즈일치 || 0}</div>
-              <div class="text-[10px] text-slate-400 mt-1">타입+사이즈일치</div>
+              <div class="text-[10px] text-slate-400 mt-1">타입+자재내역일치</div>
             </div>
             <div class="stat-card text-center border-t-2 border-amber-500">
               <div class="text-xl font-bold text-amber-600">${s.타입일치 || 0}</div>
@@ -859,9 +859,9 @@
 
     function getFiltersForStep(stepId) {
       const configs = {
-        'a1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+사이즈일치', '타입일치'] }],
+        'a1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+자재내역일치', '타입일치'] }],
         'a2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '미매핑'] }],
-        'b1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+사이즈일치', '타입일치'] }],
+        'b1': [{ key: '매핑상태', options: ['전체', '성공', '실패'] }, { key: '매핑유형', options: ['전체', '타입+자재내역일치', '타입일치'] }],
         'b2': [{ key: '매핑유형', options: ['전체', '동일내역', '유사타입', '유사내역', '미매핑'] }],
         'b3': [{ key: '적정성', options: ['전체', '우수', '보통', '부적절', '판단불가'] }],
         'c': [{ key: '적정성', options: ['전체', '양호', '적정', '주의'] }]
@@ -1042,7 +1042,7 @@
           : `<span class="badge badge-danger text-[10px]"><i class="ri-close-line"></i> ${val}</span>`;
       }
       if (col === '매핑유형') {
-        if (val === '동일내역' || val === '타입+사이즈일치') return `<span class="badge badge-success text-[10px]">${val}</span>`;
+        if (val === '동일내역' || val === '타입+자재내역일치') return `<span class="badge badge-success text-[10px]">${val}</span>`;
         if (val === '유사타입' || val === '타입일치') return `<span class="badge badge-warning text-[10px]">${val}</span>`;
         if (val === '유사내역') return `<span class="badge badge-info text-[10px]">${val}</span>`;
         return `<span class="badge badge-danger text-[10px]">${val}</span>`;
