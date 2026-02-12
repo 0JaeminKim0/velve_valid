@@ -54,6 +54,7 @@ export interface StepB1Result {
   옵션가: number;
   계약총액: number;
   차이: string;
+  원인: string;  // 차이 발생 원인 (간결하게)
 }
 
 // Step B-1: 견적 vs 계약단가 비교
@@ -106,7 +107,8 @@ export function executeStepB1(): {
       본체가: 0,
       옵션가: 0,
       계약총액: 0,
-      차이: '-'
+      차이: '-',
+      원인: '-'
     };
 
     // 1순위: vtype_key (타입+사이즈) 매핑
@@ -148,6 +150,73 @@ export function executeStepB1(): {
       if (contractTotal > 0) {
         const diffPercent = ((vr['견적가-변환'] - contractTotal) / contractTotal * 100);
         result.차이 = (diffPercent >= 0 ? '+' : '') + diffPercent.toFixed(1) + '%';
+        
+        // === 차이 원인 분석 ===
+        const diffReasons: string[] = [];
+        
+        // 견적 데이터에서 구성요소 추출
+        const quoteBody = (vr['단가-변환'] || 0) * qty;
+        const quoteNP = (vr['N/P-변환'] || 0) * qty;
+        const quoteExtCoating = (vr['외부도장-변환'] || 0) * qty;
+        const quoteIntCoating = (vr['내부도장-변환'] || 0) * qty;
+        const quoteLock = (vr['LOCK-변환'] || 0) * qty;
+        
+        // 계약 단가표에서 구성요소 추출
+        const contractNP = (pt['N/P-변환'] || 0) * qty;
+        const contractExtCoating = (pt['O-P-변환'] || 0) * qty;
+        const contractIntCoating = (pt['I-P-변환'] || 0) * qty;
+        const contractLock = (pt['LOCK-변환'] || 0) * qty;
+        
+        // 본체가 차이
+        const bodyDiff = quoteBody - Math.round(bodyTotal);
+        if (Math.abs(bodyDiff) > 100) {
+          diffReasons.push(`본체가 ${bodyDiff > 0 ? '+' : ''}${Math.round(bodyDiff).toLocaleString()}`);
+        }
+        
+        // N/P 차이
+        const npDiff = quoteNP - contractNP;
+        if (Math.abs(npDiff) > 100) {
+          diffReasons.push(`N/P ${npDiff > 0 ? '+' : ''}${Math.round(npDiff).toLocaleString()}`);
+        }
+        
+        // 외부도장 차이
+        const extDiff = quoteExtCoating - contractExtCoating;
+        if (Math.abs(extDiff) > 100) {
+          if (contractExtCoating === 0 && quoteExtCoating > 0) {
+            diffReasons.push(`외부도장 +${Math.round(extDiff).toLocaleString()}(미계약)`);
+          } else {
+            diffReasons.push(`외부도장 ${extDiff > 0 ? '+' : ''}${Math.round(extDiff).toLocaleString()}`);
+          }
+        }
+        
+        // 내부도장 차이
+        const intDiff = quoteIntCoating - contractIntCoating;
+        if (Math.abs(intDiff) > 100) {
+          if (contractIntCoating === 0 && quoteIntCoating > 0) {
+            diffReasons.push(`내부도장 +${Math.round(intDiff).toLocaleString()}(미계약)`);
+          } else {
+            diffReasons.push(`내부도장 ${intDiff > 0 ? '+' : ''}${Math.round(intDiff).toLocaleString()}`);
+          }
+        }
+        
+        // LOCK 차이
+        const lockDiff = quoteLock - contractLock;
+        if (Math.abs(lockDiff) > 100) {
+          if (contractLock === 0 && quoteLock > 0) {
+            diffReasons.push(`LOCK +${Math.round(lockDiff).toLocaleString()}(미계약)`);
+          } else {
+            diffReasons.push(`LOCK ${lockDiff > 0 ? '+' : ''}${Math.round(lockDiff).toLocaleString()}`);
+          }
+        }
+        
+        // 원인 문자열 생성
+        if (diffReasons.length > 0) {
+          result.원인 = diffReasons.join(', ');
+        } else if (Math.abs(vr['견적가-변환'] - contractTotal) < 100) {
+          result.원인 = '일치';
+        } else {
+          result.원인 = '기타 옵션 차이';
+        }
       }
     }
 
