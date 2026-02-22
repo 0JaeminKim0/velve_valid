@@ -59,6 +59,7 @@ export interface StepB1Result {
   '옵션가(OP)': number;
   계약총액: number;
   차이: string;
+  차이율: string;  // (견적가 - 계약총액) / 계약총액 * 100
   원인: string;  // 차이 발생 원인 (간결하게)
 }
 
@@ -121,6 +122,7 @@ export function executeStepB1(): {
       '옵션가(OP)': 0,
       계약총액: 0,
       차이: '-',
+      차이율: '-',
       원인: '-'
     };
 
@@ -168,6 +170,7 @@ export function executeStepB1(): {
       if (contractTotal > 0) {
         const diffPercent = ((vr['견적가-변환'] - contractTotal) / contractTotal * 100);
         result.차이 = (diffPercent >= 0 ? '+' : '') + diffPercent.toFixed(1) + '%';
+        result.차이율 = result.차이;
         
         // === 차이 원인 분석 ===
         const diffReasons: string[] = [];

@@ -1828,11 +1828,12 @@ ${getCompanyName()}
       let details = [];
       
       parts.forEach(part => {
-        // "본체가 +1,234" 또는 "외부도장 -500" 형식 파싱
+        // "본체가 +1,234" 또는 "외부도장 -500" 또는 "외부도장 +18,071" 형식 파싱
+        // 숫자에 콤마가 포함될 수 있으므로 [\d,]+ 패턴 사용
         const match = part.match(/(.+?)\s*([+-][\d,]+)/);
         if (match) {
           const itemName = match[1].trim();
-          const diffAmount = match[2].trim();
+          const diffAmount = match[2].trim();  // "+18,071" 형식 그대로 유지
           const isPositive = diffAmount.startsWith('+');
           
           let explanation = '';
