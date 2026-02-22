@@ -1824,7 +1824,9 @@ ${getCompanyName()}
         return '• 차이 원인 없음 (단가 일치)';
       }
 
-      const parts = reason.split(',').map(p => p.trim());
+      // 항목 구분: ", " 뒤에 한글이 오는 패턴으로 분리 (숫자 내 콤마와 구분)
+      // 예: "본체가 -1,661, 외부도장 +13,129" → ["본체가 -1,661", "외부도장 +13,129"]
+      const parts = reason.split(/,\s*(?=[가-힣])/).map(p => p.trim());
       let details = [];
       
       parts.forEach(part => {
