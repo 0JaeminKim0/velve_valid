@@ -829,11 +829,11 @@ export function executeStepB3(): {
     const r100 = result.최근발주가;
     const cont = result.계약단가;
 
-    // 차이율 계산: (견적가 - 최근발주가) / 견적가 * 100
-    // 견적가 대비 최근발주가와의 차이 퍼센트
+    // 차이율 계산: (견적가 - 협상목표가) / 견적가 * 100
+    // 견적가 대비 협상목표가와의 차이 퍼센트
     const calcDiffRate = () => {
-      if (est <= 0 || r100 <= 0) return '-';
-      const diff = ((est - r100) / est * 100);
+      if (est <= 0 || r90 <= 0) return '-';
+      const diff = ((est - r90) / est * 100);
       return (diff >= 0 ? '+' : '') + diff.toFixed(1);
     };
 

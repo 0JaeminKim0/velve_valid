@@ -315,17 +315,17 @@
         name: 'PR 건별 적정 단가 분석',
         steps: [
           { id: 'pr', name: 'PR 접수', api: '/api/set1/pr' },
-          { id: 'a1', name: '단가TBL 매핑', api: '/api/step/a1' },
-          { id: 'a2', name: '발주실적 매핑', api: '/api/step/a2' }
+          { id: 'a1', name: '계약 단가 비교', api: '/api/step/a1' },
+          { id: 'a2', name: '발주 실적 비교', api: '/api/step/a2' }
         ]
       },
       2: {
         name: '협력사 견적서 분석',
         steps: [
           { id: 'quote', name: '견적 수신', api: '/api/set2/quote' },
-          { id: 'b1', name: '계약비교', api: '/api/step/b1' },
-          { id: 'b2', name: '실적비교', api: '/api/step/b2' },
-          { id: 'b3', name: '적정성 판정', api: '/api/step/b3' }
+          { id: 'b1', name: '계약 단가 비교', api: '/api/step/b1' },
+          { id: 'b2', name: '발주 실적 비교', api: '/api/step/b2' },
+          { id: 'b3', name: '견적 단가 적정성 분석', api: '/api/step/b3' }
         ]
       },
       3: {
@@ -1013,8 +1013,14 @@
         }
       }
       
+      // B2/B3 단계에서 컬럼명 치환
+      const isB2Step = currentSet === 2 && sets[2].steps[currentStepIndex]?.id === 'b2';
+      const columnDisplayNames = {
+        '견적가': (isB2Step || isB3Step) ? '견적가(마이너 옵션 제외)' : '견적가'
+      };
+      
       document.getElementById('table-header').innerHTML = columns.map(col => 
-        `<th class="px-3 py-2.5 text-left text-[10px] font-bold text-slate-500 bg-slate-50 whitespace-nowrap uppercase tracking-wider">${col}</th>`
+        `<th class="px-3 py-2.5 text-left text-[10px] font-bold text-slate-500 bg-slate-50 whitespace-nowrap uppercase tracking-wider">${columnDisplayNames[col] || col}</th>`
       ).join('');
 
       document.getElementById('table-body').innerHTML = pageData.map((row, idx) => `
