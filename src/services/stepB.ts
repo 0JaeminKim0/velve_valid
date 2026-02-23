@@ -102,6 +102,12 @@ export function executeStepB1(): {
   }
 
   for (const vr of vendorQuotes) {
+    // 중량이 "개별"이거나 없는 건은 제외
+    const weight = vr['중량'] as any;
+    if (weight === '개별' || weight === null || weight === undefined || weight === 0 || weight === '0' || !weight) {
+      continue;
+    }
+
     const vk = vr.vtype_key || '';
     const vtype = vr['Valve Type'] || '';
     const desc = vr.자재내역;
@@ -349,6 +355,12 @@ export function executeStepB2(): {
   const results: StepB2Result[] = [];
 
   for (const vr of vendorQuotes) {
+    // 중량이 "개별"이거나 없는 건은 제외
+    const weight = vr['중량'] as any;
+    if (weight === '개별' || weight === null || weight === undefined || weight === 0 || weight === '0' || !weight) {
+      continue;
+    }
+
     const vk = vr.vtype_key || '';
     const desc = vr.자재내역;
     const qty = vr.수량 > 0 ? vr.수량 : 1;
@@ -552,6 +564,12 @@ export function analyzePriceDifference(itemNo?: number): {
     : vendorQuotes;
 
   for (const vr of targetQuotes) {
+    // 중량이 "개별"이거나 없는 건은 제외
+    const weight = vr['중량'] as any;
+    if (weight === '개별' || weight === null || weight === undefined || weight === 0 || weight === '0' || !weight) {
+      continue;
+    }
+
     const vk = vr.vtype_key || '';
     const vtype = vr['Valve Type'] || '';
     const desc = vr.자재내역;
