@@ -28,6 +28,17 @@ const app = new Hono();
 // CORS 설정
 app.use('/*', cors());
 
+// 전역 에러 핸들러 - 모든 오류를 JSON으로 반환 (프론트엔드 res.json() 파싱 실패 방지)
+app.onError((err, c) => {
+  console.error('❌ API Error:', err);
+  return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+});
+
+// 404 핸들러 - JSON으로 반환
+app.notFound((c) => {
+  return c.json({ error: 'Not Found', path: c.req.path }, 404);
+});
+
 // 정적 파일 서빙
 app.use('/static/*', serveStatic({ root: './public' }));
 
